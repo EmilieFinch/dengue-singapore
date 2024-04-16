@@ -1,0 +1,109 @@
+
+## Data figures {.tabset}
+
+### Figure 1
+
+```{r, include = FALSE}
+
+case_plot <- dengue_singapore |>
+  ggplot() +
+  geom_col(aes(x = date, y = dengue_cases), col = "#969696", width = 5) +
+  labs(x = "Date", y = "Dengue cases \n") +
+  theme_classic() +
+  scale_x_date(labels = label_date_short(), breaks = "2 years", limits = c(as.Date("2000-01-01"), as.Date("2023-01-01")), expand = c(0, 0)) +
+  theme(
+    axis.text.x = element_text(size = 12, family = plot_font), axis.text.y = element_text(size = 14, family = plot_font),
+    axis.title.y = element_text(size = 17, family = plot_font), axis.title.x = element_text(size = 14, family = plot_font, color = "white"),
+    legend.title = element_text(size = 14, family = plot_font), legend.text = element_text(size = 14, family = plot_font),
+    legend.key.height = unit(1.2, "cm")
+  ) # change legend key height)
+
+dengue_singapore <- dengue_singapore |>
+  mutate(nino34_20_wk_ma = rollmean(nino34, 20, fill = NA, align = "right"))
+
+nino34_plot <- ggplot(dengue_singapore) +
+  geom_col(aes(x = as.Date(date), y = nino34_20_wk_ma, fill = nino34_20_wk_ma > 0), width = 9, position = "dodge") +
+  geom_ma(aes(x = date, y = nino34), ma_fun = SMA, n = 20, alpha = 1, lty = "solid", size = 0.05, col = "black") +
+  geom_hline(yintercept = 0.4, lty = "dashed") +
+  geom_hline(yintercept = -0.4, lty = "dashed") +
+  scale_x_date(labels = label_date_short(), breaks = "2 years", limits = c(as.Date("2000-01-01"), as.Date("2023-01-01")), expand = c(0, 0)) +
+  scale_fill_manual(values = c("#225ea8", "#EC7B4B")) +
+  theme_classic() +
+  labs(x = "\nDate", y = "Niño 3.4 Index \n", fill = "") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 12, family = plot_font), axis.text.y = element_text(size = 14, family = plot_font),
+    axis.title = element_text(size = 17, family = plot_font), legend.title = element_text(size = 14, family = plot_font), legend.position = "none"
+  ) +
+  guides(fill = "none")
+
+sero_nino_plot <- ggarrange(case_plot,  nino34_plot, labels = c("A", "C"), nrow = 2, common.legend = FALSE, legend = "right", font.label = list(family = plot_font))
+
+# Climate heatmaps
+
+temp_facet <-
+  dengue_singapore |>
+  group_by(year, month) |>
+  summarise(temp = mean(maximum_temperature)) |>
+  ggplot(aes(x = month, y = year, fill = temp)) +
+  geom_raster() +
+  ylab("Year\n") +
+  xlab("") +
+  scale_fill_gradientn(name = "Maximum temperature   ", colours = brewer.pal(9, "OrRd")) +
+  scale_y_continuous(breaks = seq(2000, 2022, by = 2)) +
+  scale_x_continuous(breaks = c(1, 4, 7, 10), labels = c("Jan", "Apr", "Jul", "Oct")) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(hjust = 1, size = 12, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font),
+    axis.title.x = element_text(size = 14, family = plot_font, color = "white"), axis.title.y = element_text(size = 14, family = plot_font, vjust = 1), legend.title = element_text(size = 14, family = plot_font), legend.position = "bottom",
+  legend.key.size = unit(1, "cm"), legend.text = element_text(size = 11, family = plot_font), legend.spacing.x = unit(1, "cm")
+  )
+
+prec_facet <-
+  dengue_singapore |>
+  group_by(year, month) |>
+  summarise(prec = cumsum(rainfall)) |>
+  ggplot(aes(x = month, y = year, fill = prec)) +
+  geom_raster() +
+  ylab("Year\n") +
+  xlab("") +
+  scale_fill_gradientn(name = "Total precipitation", colours = brewer.pal(9, "Blues"), breaks = c(0, 200, 400, 600, 800, 1000), limits = c(-10, 1000)) +
+  scale_y_continuous(breaks = seq(2000, 2022, by = 2)) +
+  scale_x_continuous(breaks = c(1, 4, 7, 10), labels = c("Jan", "Apr", "Jul", "Oct")) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(hjust = 1, size = 12, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font),
+    axis.title.x = element_text(size = 14, family = plot_font, color = "white"), axis.title.y = element_text(size = 14, family = plot_font, vjust = 1), legend.title = element_text(size = 14, family = plot_font), legend.position = "bottom",
+    legend.key.size = unit(1, "cm"), legend.text = element_text(size = 11, family = plot_font), legend.spacing.x = unit(0.4, "cm")
+  )
+
+hum_facet <-
+  dengue_singapore |>
+  group_by(year, month) |>
+  summarise(abhum = mean(absolute_humidity)) |>
+  ggplot(aes(x = month, y = year, fill = abhum)) +
+  geom_raster() +
+  ylab("Year\n") +
+  xlab("\nMonth") +
+  scale_fill_gradientn(name = "Absolute humidity", colours = brewer.pal(9, "Purples"), breaks = c(18, 20, 22, 24), limits = c(17, 24)) +
+  scale_y_continuous(breaks = seq(2000, 2022, by = 2)) +
+  scale_x_continuous(breaks = c(1, 4, 7, 10), labels = c("Jan", "Apr", "Jul", "Oct")) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(hjust = 1, size = 12, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font),
+    axis.title.x = element_text(size = 14, family = plot_font), axis.title.y = element_text(size = 14, family = plot_font, vjust = 1), legend.title = element_text(size = 14, family = plot_font), legend.position = "bottom",
+    legend.key.size = unit(1, "cm"), legend.text = element_text(size = 10, family = plot_font), legend.spacing.x = unit(0.5, "cm")
+  )
+
+facet_plots <- ggarrange(temp_facet, prec_facet, hum_facet, labels = c("D", "E", "F"), nrow = 3, font.label = list(family = plot_font))
+
+data_plot <- ggarrange(sero_nino_plot, facet_plots, widths = c(1, 0.6))
+ggsave(filename = here(output_folder, "figure-1.jpeg"), data_plot, width = 480, height = 400, units = "mm", bg="white", dpi = 300)
+
+
+```
+
+```{r, fig.width = 25, fig.height = 20}
+data_plot
+```
+

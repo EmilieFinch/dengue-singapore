@@ -1,0 +1,169 @@
+
+## Model output figures {.tabset}
+
+### Figure 2
+
+```{r, include = TRUE}
+model_output <- read_results(date = NULL, type = "model-output", horizon = NULL)
+```
+
+```{r}
+
+# Figure 2 - effects of covariates on dengue incidence
+
+# Nino 3.4 SSTA
+
+nino_effect_plot <-
+  ggplot(model_output$random_effects[[2]]$`inla.group(nino34_12_wk_avg_4, n = 12)`) +
+  geom_line(aes(x = ID, y = exp(mean)), col = "#235070") +
+  geom_ribbon(aes(ymin = exp(`0.025quant`), ymax = exp(`0.975quant`), x = ID), alpha = 0.3, fill = "#235070") +
+  geom_hline(yintercept = 1, lty = "dashed") +
+  scale_y_continuous(limits = c(0.2, 5.25), breaks = seq(0.5, 5, by = 0.5)) +
+  scale_x_continuous(limits = c(-1.7, 2.65)) +
+  labs(x = NULL, y = "Effect size") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_blank(), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.title = element_text(vjust = 0.1, size = 12, family = plot_font)
+  )
+
+nino_density_plot <- ggplot(df_model) +
+  geom_density(aes(y = nino34_12_wk_avg_4), fill = "#235070", alpha = 0.3, linewidth = 0.1) +
+  coord_flip() +
+  labs(y = "\nNiño 3.4 SSTA (12 week average with 4 week lag)", x = "Density") +
+  scale_y_continuous(limits = c(-1.7, 2.65)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 12, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font, color = "white"), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.title = element_text(vjust = 0.1, size = 12, family = plot_font)
+  )
+
+nino_plot <- ggarrange(nino_effect_plot, nino_density_plot, heights = c(1, 0.4), nrow = 2)
+
+# Serotype
+
+sero_effect_plot <-
+  ggplot(model_output$random_effects[[2]]$`inla.group(time_since_switch, n = 18)`) +
+  geom_line(aes(x = ID, y = exp(mean)), col = "#235070") +
+  geom_ribbon(aes(ymin = exp(`0.025quant`), ymax = exp(`0.975quant`), x = ID), alpha = 0.3, fill = "#235070") +
+  geom_hline(yintercept = 1, lty = "dashed") +
+  scale_y_continuous(limits = c(0.2, 4), breaks = seq(0.5, 4, by = 0.5)) +
+  labs(x = NULL, y = "Effect size") +
+  scale_x_continuous(limits = c(0, 365), breaks = seq(0, 365, by = 52)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_blank(), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.title = element_text(vjust = 0.1, size = 12, family = plot_font)
+  )
+
+sero_density_plot <- ggplot(df_model) +
+  geom_density(aes(y = time_since_switch), fill = "#235070", alpha = 0.3, linewidth = 0.1) +
+  coord_flip() +
+  labs(y = "\nWeeks since switch in dominant serotype", x = "Density") +
+  scale_y_continuous(limits = c(0, 365), breaks = seq(0, 365, by = 52)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 12, family = plot_font), axis.text.y = element_text(size = 6, family = plot_font, color = "white"), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.title = element_text(vjust = 0.1, size = 12, family = plot_font)
+  )
+
+sero_plot <- ggarrange(sero_effect_plot, sero_density_plot, heights = c(1, 0.3), nrow = 2)
+
+# Maximum temperature
+
+temp_effect_plot <- ggplot(model_output$random_effects[[2]]$`inla.group(max_t_scale_12_wk_avg_0)`) +
+  geom_line(aes(x = ID + mean(dengue_singapore$maximum_temperature, na.rm = TRUE), y = exp(mean)), col = "#235070") +
+  geom_ribbon(aes(ymin = exp(`0.025quant`), ymax = exp(`0.975quant`), x = ID + mean(dengue_singapore$maximum_temperature)), alpha = 0.3, fill = "#235070") +
+  scale_y_continuous(limits = c(0.5, 1.5), breaks = seq(0.5, 1.5, by = 0.5)) +
+  scale_x_continuous(limits = c(30.2, 33.5), breaks = seq(30, 33.5, by = 1)) +
+  geom_hline(yintercept = 1, lty = "dashed") +
+  labs(x = NULL, y = "Effect size") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_blank(), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.title = element_text(vjust = 0.1, size = 12, family = plot_font)
+  )
+
+temp_density_plot <- ggplot(df_model) +
+  geom_density(aes(y = max_t_scale_12_wk_avg_0 + mean(dengue_singapore$maximum_temperature, na.rm = TRUE)), fill = "#235070", alpha = 0.3, size = 0.1) +
+  coord_flip() +
+  labs(y = "\nMaximum temperature in °C (12 week average)", x = "Density") +
+  scale_y_continuous(limits = c(30.2, 33.5), breaks = seq(30, 33.5, by = 1)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 12, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font, color = "white"), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.title = element_text(vjust = 0.1, size = 12, family = plot_font)
+  )
+
+temp_plot <- ggarrange(temp_effect_plot, temp_density_plot, heights = c(1, 0.4), nrow = 2)
+
+# Days with no rain
+
+prec_effect_plot <- ggplot(model_output$random_effects[[2]]$`inla.group(days_no_rain_12_wk_total_0)`) +
+  geom_line(aes(x = ID, y = exp(mean)), col = "#235070") +
+  geom_ribbon(aes(ymin = exp(`0.025quant`), ymax = exp(`0.975quant`), x = ID), alpha = 0.3, fill = "#235070") +
+  geom_hline(yintercept = 1, lty = "dashed") +
+  scale_y_continuous(limits = c(0.5, 1.6), breaks = seq(0.5, 1.5, by = 0.5)) +
+  scale_x_continuous(limits = c(15, 75), breaks = seq(15, 75, by = 10)) +
+  labs(x = paste0(NULL), y = "Effect size") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_blank(), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.title = element_text(vjust = 0.1, size = 12, family = plot_font)
+  )
+
+prec_density_plot <- ggplot(df_model) +
+  geom_density(aes(y = days_no_rain_12_wk_total_0), fill = "#235070", alpha = 0.3, size = 0.1) +
+  coord_flip() +
+  labs(y = "\nDays without rain (12 week total)", x = "Density") +
+  scale_y_continuous(limits = c(15, 75), breaks = seq(15, 75, by = 10)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 12, family = plot_font), axis.text.y = element_text(size = 8, family = plot_font, color = "white"), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.title = element_text(vjust = 0.1, size = 12, family = plot_font)
+  )
+
+prec_plot <- ggarrange(prec_effect_plot, prec_density_plot, heights = c(1, 0.4), nrow = 2)
+
+col1 <- plot_grid(temp_plot, prec_plot, nino_plot, ncol = 1, labels = c("A", "B", "C"), rel_heights = c(1, 1, 1.25), label_fontfamily = plot_font)
+fig_effects <- plot_grid(col1, sero_plot, labels = c("", "D"), label_fontfamily = plot_font)
+
+
+# Plot annual random effects to compare
+
+annual_reffs <- rbind(
+  model_output$random_effects[[1]]$year_index |>
+    mutate(mod_type = "Seasonal baseline with year"),
+  model_output$random_effects[[3]]$year_index |>
+    mutate(mod_type = "Climate only"),
+  model_output$random_effects[[2]]$year_index |>
+    mutate(mod_type = "Climate and serotype"),
+  model_output$random_effects[[4]]$year_index |>
+    mutate(mod_type = "Serotype only")
+) |>
+  mutate(mod_type = factor(mod_type, levels = c("Climate and serotype", "Climate only", "Serotype only", "Seasonal baseline with year")))
+
+pal <- c("Climate and serotype" = "#7570B3", "Climate only" = "#E7298A", "Serotype only" = "#1B9E77", "Seasonal baseline with year" = "#E6AB02")
+
+random_year_plot <- ggplot(subset(annual_reffs)) +
+  geom_point(aes(x = ID + 1999, y = mean, col = mod_type), position = position_dodge(width = 0.5)) +
+  geom_linerange(aes(ymin = `0.025quant`, ymax = `0.975quant`, x = ID + 1999, col = mod_type), position = position_dodge(width = 0.5)) +
+  geom_hline(aes(yintercept = 0), lty = "dashed") +
+  labs(x = paste0("\nYear"), y = "Dengue incidence rate (log scale)", col = "Model Type") +
+  scale_x_continuous(breaks = seq(2000, 2022, by = 1)) +
+  scale_color_manual(values = pal) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 12, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank()
+  )
+
+fig_effects_year <- plot_grid(fig_effects, random_year_plot, nrow = 2, labels = c("", "E"), rel_heights = c(1, 0.4), label_fontfamily = plot_font)
+ggsave(filename = here(output_folder, "figure-2.jpeg"), fig_effects_year, width = 450, height = 360, units = "mm", bg="white", dpi = 300, )
+
+```
+
+```{r, include = TRUE, fig.width = 20, fig.height = 16}
+fig_effects_year
+```
+

@@ -1,0 +1,51 @@
+---
+title: "manuscript-figures"
+author: "Emilie Finch"
+date: "Generated on `r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  echo = FALSE,
+  warning = FALSE,
+  fig.width = 10,
+  fig.height = 7
+)
+
+```
+
+```{r}
+# Load data for plotting
+if (!require("here")) install.packages("here")
+source(here("R", "00_load-data.R"))
+source(here("R", "create-lagged-data_fn.R"))
+source(here("R", "tscv-prediction_fn.R"))
+source(here("R", "utils_fn.R"))
+
+df_model <- lag_data(dengue_singapore)
+
+```
+
+```{r}
+plot_font <- "Open Sans"
+font_add_google(plot_font)
+showtext_opts(dpi = 300)
+showtext_auto()
+
+dir.create(here("figures"))
+dir.create(here("figures", Sys.Date()))
+output_folder <- here("figures", Sys.Date())
+
+```
+
+```{r data-figure, child = "rmdchunks/data-figure.Rmd"}
+```
+
+```{r model-output-figures, child = "rmdchunks/model-output-figures.Rmd"}
+```
+
+```{r tscv-output-figures, child = "rmdchunks/tscv-output-figures.Rmd"}
+```
+

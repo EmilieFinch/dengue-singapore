@@ -1,0 +1,525 @@
+
+## TSCV output figures {.tabset}
+
+### Figure 3
+
+```{r, include = TRUE}
+horizon <- 0
+tscv_output <- read_results(date = NULL, type = "tscv-preds", horizon = horizon)
+```
+
+```{r, include = FALSE}
+
+df_eval <- df_model %>%
+    group_by(year, month) %>%
+    mutate(month_index = cur_group_id()) %>%
+    ungroup() %>%
+    mutate(date_index = row_number()) %>%
+    dplyr::select(
+      date, date_index, year, year_index, month, month_index,
+      eweek, cases, pop, 
+      time_since_switch,
+      time_since_switch_2,
+      time_since_switch_4,
+      time_since_switch_6,
+      time_since_switch_8,
+      max_t_scale_12_wk_avg_0,
+      max_t_scale_10_wk_avg_2,
+      max_t_scale_8_wk_avg_4,
+      max_t_scale_6_wk_avg_6,
+      max_t_scale_4_wk_avg_8,
+      nino34_12_wk_avg_4,
+      nino34_10_wk_avg_6,
+      nino34_8_wk_avg_8,
+      days_no_rain_12_wk_total_0,
+      days_no_rain_10_wk_total_2,
+      days_no_rain_8_wk_total_4,
+      days_no_rain_6_wk_total_6,
+      days_no_rain_4_wk_total_8
+    ) %>%
+    # As days without rain is a cumulative variable, scale up the lagged versions to what would be expected over a 12 week period
+    mutate(
+      days_no_rain_10_wk_total_2 = days_no_rain_10_wk_total_2 * 12 / 10,
+      days_no_rain_8_wk_total_4 = days_no_rain_8_wk_total_4 * 12 / 8,
+      days_no_rain_6_wk_total_6 = days_no_rain_6_wk_total_6 * 12 / 6,
+      days_no_rain_4_wk_total_8 = days_no_rain_4_wk_total_8 * 12 / 4
+    ) %>%
+    mutate(
+      time_since_switch_2 = time_since_switch_2 + 2,
+      time_since_switch_4 = time_since_switch_4 + 4,
+      time_since_switch_6 = time_since_switch_6 + 6,
+      time_since_switch_8 = time_since_switch_8 + 8
+    )
+
+  # Add outbreak thresholds
+  year_month <- df_eval |>
+    group_by(year_index, month) |>
+    filter(year_index >= 10) |>
+    summarise(.groups = "keep")
+  thresholds <- purrr::map2_df(year_month$month, year_month$year_index, possibly(calculate_thresholds), data_input = df_eval, quantile = 0.75, .progress = TRUE)
+
+  df_eval <- df_eval |> left_join(thresholds, by = c("year_index", "month"))
+```
+
+```{r, include = FALSE}
+tscv_preds <- get_pred_quantiles(tscv_output, horizon, df_eval)
+tscv_outbreaks <- get_outbreak_preds(tscv_output, df_eval)
+```
+
+
+```{r}
+
+pal <- c("Climate and serotype" = "#7570B3", "Climate only" = "#E7298A", "Serotype only" = "#1B9E77", "Seasonal baseline" = "#D95F02")
+
+tscv_plot_sero_climate <- ggplot(subset(tscv_preds, mod == "sero-climate")) +
+  geom_line(aes(y = median, x = df_eval$date), col = "#7570B3", size = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#7570B3") +
+  geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
+    date_breaks = "6 months",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  coord_cartesian(ylim = c(0, 2450)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 9, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_blank()
+  )
+
+
+tscv_plot_sero <- ggplot(subset(tscv_preds, mod == "sero-only")) +
+  geom_line(aes(y = median, x = df_eval$date), col = "#1B9E77", size = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#1B9E77") +
+  geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
+    date_breaks = "6 months",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  coord_cartesian(ylim = c(0, 2450)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 9, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_blank()
+  )
+
+tscv_plot_clim <- ggplot(subset(tscv_preds, mod == "climate-only")) +
+  geom_line(aes(y = median, x = df_eval$date), col = "#E7298A", size = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#E7298A") +
+  geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
+    date_breaks = "6 months",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  coord_cartesian(ylim = c(0, 2450)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 9, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_blank()
+  )
+
+tscv_plot_null_baseline <- ggplot(subset(tscv_preds, mod == "seasonal-baseline")) +
+  geom_line(aes(y = median, x = df_eval$date), col = "#D95F02", size = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#D95F02") +
+  geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
+    date_breaks = "6 months",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  coord_cartesian(ylim = c(0, 2450)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 9, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_blank()
+  )
+
+
+tscv_plot_year_baseline <- ggplot(subset(tscv_preds, mod == "seasonal-year-baseline")) +
+  geom_line(aes(y = median, x = df_eval$date), col = "#E6AB02", size = 0.5) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#E6AB02") +
+  geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
+    date_breaks = "6 months",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  coord_cartesian(ylim = c(0, 2450)) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 9, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_blank()
+  )
+
+
+row1 <- annotate_figure(tscv_plot_sero_climate, left = text_grob("Climate and serotype", color = "black", rot = 90, size = 12, family = plot_font))
+row2 <- annotate_figure(tscv_plot_clim, left = text_grob("Climate only", color = "black", rot = 90, size = 12, family = plot_font))
+row3 <- annotate_figure(tscv_plot_sero, left = text_grob("Serotype only", color = "black", rot = 90, size = 12, family = plot_font))
+row4 <- annotate_figure(tscv_plot_null_baseline, left = text_grob("Seasonal baseline", color = "black", rot = 90, size = 12, family = plot_font))
+row5 <- annotate_figure(tscv_plot_year_baseline, left = text_grob("Seasonal baseline with year", color = "black", rot = 90, size = 12, family = plot_font))
+
+tscv_preds_compare <- ggarrange(row1, row2, row3, row4, nrow = 4)
+ggsave(filename = here(output_folder, "figure-3.jpeg"), tscv_preds_compare, width = 360, height = 270, units = "mm", bg="white", dpi = 300)
+
+```
+
+```{r, fig.width = 12, fig.height = 9}
+tscv_preds_compare
+```
+
+### Figure 4
+
+```{r, include = FALSE}
+
+# ROC analysis ----------------------------------------------------------------------------------------------------------------------------------------------
+
+## Hit rate and miss rate
+
+tscv_preds$date <- tscv_outbreaks$date
+tscv_outbreaks <- tscv_outbreaks |> left_join(tscv_preds, by = c("mod", "date"))
+
+roc_curves <- get_roc_coords(tscv_outbreaks)
+hit_rates <- get_hit_rates(tscv_outbreaks)
+
+# ROC plot
+
+pal <- c("Climate and serotype" = "#7570B3", "Climate only" = "#E7298A", "Serotype only" = "#1B9E77", "Seasonal baseline" = "#D95F02","Seasonal baseline with year" = "#E6AB02")
+
+roc_plot <- roc_curves |>
+  mutate(mod = factor(mod, levels = c("sero-climate", "climate-only", "sero-only", "seasonal-baseline", "seasonal-year-baseline"), labels = c("Climate and serotype", "Climate only", "Serotype only", "Seasonal baseline", "Seasonal baseline with year"))) |>
+  filter(!is.na(sensitivity_lower)) |>
+  filter(mod != "Seasonal baseline with year") |>
+  ggplot() +
+  geom_path(aes(x = 1 - specificity, y = sensitivity, col = mod)) +
+  geom_ribbon(aes(x = 1 - specificity, ymin = sensitivity_lower, ymax = sensitivity_upper, fill = mod), alpha = 0.2) +
+  # scale_x_continuous(expand = c(0,0)) +
+  # scale_y_continuous(expand = c(0,0)) +
+  geom_abline(intercept = 0, slope = 1, lty = "longdash") + # Note that geom_abline doesn't work with scale_x_reverse()
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  theme_classic() +
+  labs(y = "Hit rate", x = "False alarm rate") +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+# Tile plots for outbreak detection ------------------------------------------------------------------------------------------------------------------------
+
+pal <- c("#c25f4f", "#d28375", "#e0a79c", "#eaccc6", "#f1f1f1", "#c7d1d0", "#9fb3b1", "#789592", "#527875")
+# pal <- c("#bf812d", "#d29d60", "#e1ba91", "#eed8c3", "#f6f6f6", "#c9dedc", "#9cc6c1", "#6dafa8", "#35978f")
+outb_prob_sero_climate <- tscv_outbreaks |>
+  filter(mod == "sero-climate" & year >= 2009) |>
+  add_row(year = c(2009:2013, 2015:2019, 2021:2022), eweek = rep(53, 12)) |>
+  # calculate  incidence rate
+  ggplot(aes(x = eweek, y = year, fill = prob)) +
+  geom_raster() +
+  geom_point(data = function(x) subset(x, outbreak.occurred == 1), shape = 16, size = 1) +
+  scale_fill_gradientn(name = "Probability of outbreak", colours = rev(pal), breaks = seq(0, 1, by = 0.25), labels = seq(0, 1, by = 0.25), limits = c(0, 1.01)) +
+  scale_y_continuous(breaks = seq(2008, 2024, by = 2)) +
+  scale_x_continuous(breaks = seq(0, 54, by = 10)) +
+  labs(x = "\nEpidemiological Week", y = "Climate and serotype \n Year \n") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font, color = "white"), axis.text.y = element_text(size = 10, family = plot_font), axis.title.y = element_text(size = 12, family = plot_font),
+    axis.title.x = element_text(size = 12, family = plot_font, color = "white"), legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_text(size = 12, family = plot_font)
+  )
+
+outb_prob_sero <- tscv_outbreaks |>
+  filter(mod == "sero-only" & year >= 2009) |>
+  add_row(year = c(2009:2013, 2015:2019, 2021:2022), eweek = rep(53, 12)) |>
+  # calculate  incidence rate
+  ggplot(aes(x = eweek, y = year, fill = prob)) +
+  geom_raster() +
+  geom_point(data = function(x) subset(x, outbreak.occurred == 1), shape = 16, size = 1) +
+  scale_fill_gradientn(name = "Probability of outbreak", colours = rev(pal), breaks = seq(0, 1, by = 0.25), labels = seq(0, 1, by = 0.25), limits = c(0, 1.01)) +
+  scale_y_continuous(breaks = seq(2008, 2024, by = 2)) +
+  scale_x_continuous(breaks = seq(0, 54, by = 10)) +
+  labs(x = "\nEpidemiological Week", y = "Serotype only \n Year \n ") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_text(size = 12, family = plot_font)
+  )
+
+outb_prob_climate <- tscv_outbreaks |>
+  filter(mod == "climate-only" & year >= 2009) |> # calculate  incidence rate
+  add_row(year = c(2009:2013, 2015:2019, 2021:2022), eweek = rep(53, 12)) |>
+  ggplot(aes(x = eweek, y = year, fill = prob)) +
+  geom_raster() +
+  geom_point(data = function(x) subset(x, outbreak.occurred == 1), shape = 16, size = 1) +
+  scale_fill_gradientn(name = "Probability of outbreak", colours = rev(pal), breaks = seq(0, 1, by = 0.25), labels = seq(0, 1, by = 0.25), limits = c(0, 1.01)) +
+  scale_y_continuous(breaks = seq(2008, 2024, by = 2)) +
+  scale_x_continuous(breaks = seq(0, 54, by = 10)) +
+  labs(x = "\nEpidemiological Week", y = "Climate only \n Year \n") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font, color = "white"), axis.text.y = element_text(size = 10, family = plot_font), axis.title.y = element_text(size = 12, family = plot_font),
+    axis.title.x = element_text(size = 12, family = plot_font, color = "white"), legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_text(size = 12, family = plot_font)
+  )
+
+outb_prob_null <- tscv_outbreaks |>
+  filter(mod == "seasonal-baseline" & year >= 2009) |> # calculate  incidence rate
+  add_row(year = c(2009:2013, 2015:2019, 2021:2022), eweek = rep(53, 12)) |>
+  ggplot(aes(x = eweek, y = year, fill = prob)) +
+  geom_raster() +
+  geom_point(data = function(x) subset(x, outbreak.occurred == 1), shape = 16, size = 1) +
+  scale_fill_gradientn(name = "Probability of outbreak", colours = rev(pal), breaks = seq(0, 1, by = 0.25), labels = seq(0, 1, by = 0.25), limits = c(0, 1.01)) +
+  scale_y_continuous(breaks = seq(2008, 2024, by = 2)) +
+  scale_x_continuous(breaks = seq(0, 54, by = 10)) +
+  labs(x = "\nEpidemiological Week", y = "Seasonal baseline \n Year \n") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 10, family = plot_font), legend.position = "bottom", legend.title = element_text(size = 12, family = plot_font)
+  )
+
+tscv_tiles_compare <- ggarrange(outb_prob_sero_climate, outb_prob_null, nrow = 2, ncol = 1, common.legend = TRUE, legend = "bottom", labels = c("A", "B"), font.label = list(family = plot_font))
+tscv_roc <- ggarrange(tscv_tiles_compare, roc_plot, labels = c("", "C"), font.label = list(family = plot_font), widths = c(1, 1))
+ggsave(filename = here(output_folder, "figure-3.jpeg"), tscv_roc, width = 360, height = 240, units = "mm", bg="white", dpi = 300)
+
+```
+
+
+```{r, fig.width = 15, fig.height = 10}
+tscv_roc
+```
+
+### Figure 5
+
+```{r, include = FALSE}
+
+tscv_0 <- read_results(date = NULL, type = "tscv-preds", horizon = 0)
+tscv_2 <- read_results(date = NULL, type = "tscv-preds", horizon = 2)
+tscv_4 <- read_results(date = NULL, type = "tscv-preds", horizon = 4)
+tscv_6 <- read_results(date = NULL, type = "tscv-preds", horizon = 6)
+tscv_8 <- read_results(date = NULL, type = "tscv-preds", horizon = 8)
+
+tscv_preds <- get_pred_quantiles(tscv_0, 0, df_eval) |> # input file names for each forecast horizon
+  rbind(get_pred_quantiles(tscv_2, 2, df_eval) |>
+  rbind(get_pred_quantiles(tscv_4, 4, df_eval) |>
+  rbind(get_pred_quantiles(tscv_6, 6, df_eval) |>
+  rbind(get_pred_quantiles(tscv_8, 8, df_eval)))))
+
+tscv_scores <- score_tscv(tscv_0, df_eval, 0) |> 
+  rbind(score_tscv(tscv_2, df_eval, 2) |> 
+  rbind(score_tscv(tscv_4, df_eval, 4),
+  rbind(score_tscv(tscv_6, df_eval, 6),
+  rbind(score_tscv(tscv_8, df_eval, 8)))))
+# Figure 5 - dengue forecasts for early warning at 4 and 8 week forecast horizons -----------------------------------------------------------
+
+pal <- c("Climate and serotype" = "#7570B3", "Climate only" = "#E7298A", "Serotype only" = "#1B9E77", "Seasonal baseline" = "#D95F02")
+
+tscv_preds_horizon <- tscv_preds |>
+  mutate(
+    mod = factor(mod, levels = c("sero-climate", "climate-only", "sero-only", "seasonal-baseline", "seasonal-year-baseline"), labels = c("Climate and serotype", "Climate only", "Serotype only", "Seasonal baseline", "Seasonal baseline with year")),
+    horizon = factor(horizon, levels = c("0", "2", "4", "6", "8"), labels = c("0 weeks ahead", "2 weeks ahead", "4 weeks ahead", "6 weeks ahead", "8 weeks ahead"))
+  ) |>
+  filter(horizon != "0 weeks ahead" & horizon != "2 weeks ahead" & horizon != "6 weeks ahead") |>
+  filter(mod != "Seasonal baseline with year") |>
+  ggplot() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = date, fill = factor(mod), group = factor(mod)), alpha = 0.3) +
+  geom_line(aes(y = median, x = date, col = factor(mod), group = factor(mod)), size = 0.5) +
+  geom_line(aes(y = true_cases, x = date), col = "#000000", size = 0.3) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
+    date_breaks = "2 years",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  coord_cartesian(ylim = c(0, 2250)) +
+  facet_grid(mod ~ horizon, switch = "y") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 9.5, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+ggsave(filename = here(output_folder, "figure-5.jpeg"), tscv_preds_horizon, width = 450, height = 225, units = "mm", bg="white", dpi = 300)
+
+```
+
+```{r, fig.width = 19, fig.height = 9.5}
+tscv_preds_horizon
+```
+
+### Figure S.2
+
+```{r, include = FALSE}
+
+# Supplementary Figure 2 - dengue forecasts for early warning at 0-8 week forecast horizons 
+
+tscv_preds_horizon_all <- tscv_preds |>
+  mutate(
+    mod = factor(mod, levels = c("sero-climate", "climate-only", "sero-only", "seasonal-baseline", "seasonal-year-baseline"), labels = c("Climate and serotype", "Climate only", "Serotype only", "Seasonal baseline", "Seasonal baseline with year")),
+    horizon = factor(horizon, levels = c("0", "2", "4", "6", "8"), labels = c("0 weeks ahead", "2 weeks ahead", "4 weeks ahead", "6 weeks ahead", "8 weeks ahead"))
+  ) |>
+  filter(horizon != "0 weeks ahead") |>
+  filter(mod != "Seasonal baseline with year") |>
+  ggplot() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = date, fill = factor(mod), group = factor(mod)), alpha = 0.3) +
+  geom_line(aes(y = median, x = date, col = factor(mod), group = factor(mod)), size = 0.5) +
+  geom_line(aes(y = true_cases, x = date), col = "#000000", size = 0.3) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2009-01-01"), as.Date("2023-03-15")),
+    date_breaks = "2 years",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  coord_cartesian(ylim = c(0, 2250)) +
+  facet_grid(mod ~ horizon, switch = "y") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 9.5, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm"),
+  )
+
+ggsave(filename = here(output_folder, "figure-S2.jpeg"), tscv_preds_horizon_all, width = 450, height = 225, units = "mm", bg="white", dpi = 300)
+
+```
+
+```{r, fig.width = 19, fig.height = 12}
+tscv_preds_horizon_all
+```
+
+### Figure 6 
+
+```{r, include = FALSE}
+
+# Figure 6 - Forecast scores over forecast horizons -----------------------------------------------------------------------------------------------
+
+tscv_scores <- tscv_scores |>
+  group_by(horizon) |>
+  mutate(baseline = crps_natural[mod == "seasonal-baseline"]) |>
+  mutate(crpss = (1 - crps_natural / baseline) * 100) |>
+  select(-c(baseline)) |>
+  ungroup() |>
+  mutate(mod = factor(mod, levels = c("sero-climate", "climate-only", "sero-only", "seasonal-baseline", "seasonal-year-baseline"), labels = c("Climate and serotype", "Climate only", "Serotype only", "Seasonal baseline", "Seasonal baseline with year"))) |>
+  mutate(auc = auc * 100, false_alarm = false_alarm * 100, hit_rate = hit_rate * 100) |>
+  filter(mod != "Seasonal baseline with year") |>
+  pivot_longer(cols = c("crps_natural", "crpss", "crps_log", "auc", "false_alarm", "hit_rate", "brier_score")) |>
+  mutate(name = factor(name, levels = c("crps_log", "crps_natural", "crpss", "brier_score", "auc", "hit_rate", "false_alarm"), labels = c("CRPS (log scale)", "CRPS", "CRPSS", "Brier score", "AUC (%)", "Hit rate (%)", "False alarm rate (%)"))) |>
+  filter(name != "CRPS (log scale)")
+
+# Plot seperately to control min and max y limits
+crps_facet <- tscv_scores |>
+  filter(name == "CRPS") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_color_manual(values = pal) +
+  scale_y_continuous(limits = c(0, max(tscv_scores$value[tscv_scores$name == "CRPS"]))) +
+  labs(x = "", y = "CRPS", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+crpss_facet <- tscv_scores |>
+  filter(name == "CRPSS") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 20))) +
+  scale_color_manual(values = pal) +
+  labs(x = "", y = "CRPSS (%)", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+brier_facet <- tscv_scores |>
+  filter(name == "Brier score") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_color_manual(values = pal) +
+  scale_y_continuous(limits = c(0, max(tscv_scores$value[tscv_scores$name == "Brier score"]))) +
+  labs(x = "", y = "Brier score", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+auc_facet <- tscv_scores |>
+  filter(name == "AUC (%)") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 20))) +
+  scale_color_manual(values = pal) +
+  labs(x = "", y = "AUC (%)", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+hit_facet <- tscv_scores |>
+  filter(name == "Hit rate (%)") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 25))) +
+  scale_color_manual(values = pal) +
+  labs(x = "Forecast horizon", y = "Hit rate (%)", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+false_alarm_facet <- tscv_scores |>
+  filter(name == "False alarm rate (%)") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 25))) +
+  scale_color_manual(values = pal) +
+  labs(x = "", y = "False alarm rate (%)", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+score_plot <- ggarrange(crps_facet, crpss_facet, brier_facet, auc_facet, hit_facet, false_alarm_facet, nrow = 2, ncol = 3, common.legend = TRUE, legend = "bottom")
+ggsave(filename = here(output_folder, "figure-6.jpeg"), score_plot, width = 360, height = 240, units = "mm", bg="white", dpi = 300)
+
+```
+
+```{r, fig.height = 9, fig.width = 15}
+score_plot
+```
+
