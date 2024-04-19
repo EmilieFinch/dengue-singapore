@@ -3,7 +3,6 @@
 # Author: Emilie Finch
 # Arguments:
 # data (data frame)
-# lag (0 or 1): whether to include variables with 0 lag or not
 # Output: data frame for model selection including lagged and aggregated climate and serotype variables
 # - Variables created are: max_t (maximum temperature), mean_t (mean temperature), min_t (minimum temperature)
 #   ab_hum (absolute humidity), prec (precipitation), days_no_rain (days without rain), nino34 (Niño 3.4 SSTA) and
