@@ -50,10 +50,7 @@ w_params <- function(x, n) {
 
 # Function to fit INLA models
 
-fitting <- function(fit_data, forms, lims = FALSE) {
-  # Arguments #
-  #   data: a dataframe object
-  #   forms: list of formulae for INLA models
+fit_inla <- function(fit_data, forms, lims = FALSE) {
 
   start_time <- Sys.time()
 
@@ -115,7 +112,8 @@ fitting <- function(fit_data, forms, lims = FALSE) {
 
   print("Baseline model completed.")
 
-  # Covariate models #
+  # Covariate models 
+  
   if (lims == FALSE) {
     start_end <- 1:length(forms)
   } else {

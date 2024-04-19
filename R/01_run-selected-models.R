@@ -13,8 +13,9 @@ if (!exists("dengue_singapore")) {
 source(here("R", "create-lagged-data_fn.R"))
 source(here("R", "fit-inla_fn.R"))
 
-lag_cutoff <- 0
-df_model <- lag_data(dengue_singapore) # Wrangle data for model fitting
+# Wrangle data for model fitting
+
+df_model <- lag_data(dengue_singapore) 
 
 # Define formulae
 
@@ -26,5 +27,5 @@ forms <- c(sero_climate, climate_only, sero_only)
 
 # Run models
 
-mods_out <- fitting(df_model, forms)
+mods_out <- fit_inla(df_model, forms)
 saveRDS(mods_out, here("output", paste0("model-output_", Sys.Date(), ".rds")))

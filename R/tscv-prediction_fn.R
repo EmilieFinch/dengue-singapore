@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------------------
 # Function to generate time series cross-validated predictions
-# And helper function to calculate seasonal moving percentile threshold and to extract useful parts of output
+# And helper function to calculate seasonal moving percentile threshold
 # Arguments:
 # data_input (data frame)
 # horizon (numeric): number of weeks into the future to predict for each formula

@@ -76,7 +76,7 @@ tscv_plot_sero_climate <- ggplot(subset(tscv_preds, mod == "sero-climate")) +
   geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#7570B3") +
   geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
   labs(x = NULL, y = NULL) +
-  scale_x_date( # fill was #4682B4
+  scale_x_date(
     limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
     date_breaks = "6 months",
     labels = scales::label_date_short(), expand = c(0, 0)
@@ -94,7 +94,7 @@ tscv_plot_sero <- ggplot(subset(tscv_preds, mod == "sero-only")) +
   geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#1B9E77") +
   geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
   labs(x = NULL, y = NULL) +
-  scale_x_date( # fill was #4682B4
+  scale_x_date(
     limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
     date_breaks = "6 months",
     labels = scales::label_date_short(), expand = c(0, 0)
@@ -111,7 +111,7 @@ tscv_plot_clim <- ggplot(subset(tscv_preds, mod == "climate-only")) +
   geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#E7298A") +
   geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
   labs(x = NULL, y = NULL) +
-  scale_x_date( # fill was #4682B4
+  scale_x_date(
     limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
     date_breaks = "6 months",
     labels = scales::label_date_short(), expand = c(0, 0)
@@ -128,7 +128,7 @@ tscv_plot_null_baseline <- ggplot(subset(tscv_preds, mod == "seasonal-baseline")
   geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#D95F02") +
   geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
   labs(x = NULL, y = NULL) +
-  scale_x_date( # fill was #4682B4
+  scale_x_date(
     limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
     date_breaks = "6 months",
     labels = scales::label_date_short(), expand = c(0, 0)
@@ -146,7 +146,7 @@ tscv_plot_year_baseline <- ggplot(subset(tscv_preds, mod == "seasonal-year-basel
   geom_ribbon(aes(ymin = lower, ymax = upper, x = df_eval$date), alpha = 0.3, fill = "#E6AB02") +
   geom_line(aes(y = df_eval$cases, x = df_eval$date), col = "#000000", size = 0.3) +
   labs(x = NULL, y = NULL) +
-  scale_x_date( # fill was #4682B4
+  scale_x_date(
     limits = c(as.Date("2000-01-01"), as.Date("2023-03-15")),
     date_breaks = "6 months",
     labels = scales::label_date_short(), expand = c(0, 0)
@@ -199,8 +199,6 @@ roc_plot <- roc_curves |>
   ggplot() +
   geom_path(aes(x = 1 - specificity, y = sensitivity, col = mod)) +
   geom_ribbon(aes(x = 1 - specificity, ymin = sensitivity_lower, ymax = sensitivity_upper, fill = mod), alpha = 0.2) +
-  # scale_x_continuous(expand = c(0,0)) +
-  # scale_y_continuous(expand = c(0,0)) +
   geom_abline(intercept = 0, slope = 1, lty = "longdash") + # Note that geom_abline doesn't work with scale_x_reverse()
   scale_color_manual(values = pal) +
   scale_fill_manual(values = pal) +
@@ -214,12 +212,10 @@ roc_plot <- roc_curves |>
 
 # Tile plots for outbreak detection ------------------------------------------------------------------------------------------------------------------------
 
-pal <- c("#c25f4f", "#d28375", "#e0a79c", "#eaccc6", "#f1f1f1", "#c7d1d0", "#9fb3b1", "#789592", "#527875")
-# pal <- c("#bf812d", "#d29d60", "#e1ba91", "#eed8c3", "#f6f6f6", "#c9dedc", "#9cc6c1", "#6dafa8", "#35978f")
+pal <- rev(brewer.pal(n = 9, name = "BuGn"))
 outb_prob_sero_climate <- tscv_outbreaks |>
   filter(mod == "sero-climate" & year >= 2009) |>
   add_row(year = c(2009:2013, 2015:2019, 2021:2022), eweek = rep(53, 12)) |>
-  # calculate  incidence rate
   ggplot(aes(x = eweek, y = year, fill = prob)) +
   geom_raster() +
   geom_point(data = function(x) subset(x, outbreak.occurred == 1), shape = 16, size = 1) +
@@ -236,7 +232,6 @@ outb_prob_sero_climate <- tscv_outbreaks |>
 outb_prob_sero <- tscv_outbreaks |>
   filter(mod == "sero-only" & year >= 2009) |>
   add_row(year = c(2009:2013, 2015:2019, 2021:2022), eweek = rep(53, 12)) |>
-  # calculate  incidence rate
   ggplot(aes(x = eweek, y = year, fill = prob)) +
   geom_raster() +
   geom_point(data = function(x) subset(x, outbreak.occurred == 1), shape = 16, size = 1) +
@@ -374,7 +369,7 @@ tscv_preds_horizon_all <- tscv_preds |>
   geom_line(aes(y = true_cases, x = date), col = "#000000", size = 0.3) +
   labs(x = NULL, y = NULL) +
   scale_x_date( # fill was #4682B4
-    limits = c(as.Date("2009-01-01"), as.Date("2023-03-15")),
+    limits = c(as.Date("2008-01-01"), as.Date("2023-03-15")),
     date_breaks = "2 years",
     labels = scales::label_date_short(), expand = c(0, 0)
   ) +
@@ -390,11 +385,11 @@ tscv_preds_horizon_all <- tscv_preds |>
     legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm"),
   )
 
-ggsave(filename = here(output_folder, "figure-S2.jpeg"), tscv_preds_horizon_all, width = 450, height = 225, units = "mm", bg="white", dpi = 300)
+ggsave(filename = here(output_folder, "figure-S2.jpeg"), tscv_preds_horizon_all, width = 600, height = 300, units = "mm", bg="white", dpi = 300)
 
 ```
 
-```{r, fig.width = 19, fig.height = 12}
+```{r, fig.width = 24, fig.height = 12}
 tscv_preds_horizon_all
 ```
 

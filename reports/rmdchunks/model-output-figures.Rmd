@@ -159,7 +159,7 @@ random_year_plot <- ggplot(subset(annual_reffs)) +
   )
 
 fig_effects_year <- plot_grid(fig_effects, random_year_plot, nrow = 2, labels = c("", "E"), rel_heights = c(1, 0.4), label_fontfamily = plot_font)
-ggsave(filename = here(output_folder, "figure-2.jpeg"), fig_effects_year, width = 450, height = 360, units = "mm", bg="white", dpi = 300, )
+ggsave(filename = here(output_folder, "figure-2.jpeg"), fig_effects_year, width = 400, height = 500, units = "mm", bg="white", dpi = 300)
 
 ```
 

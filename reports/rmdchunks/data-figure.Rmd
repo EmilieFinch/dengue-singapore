@@ -16,7 +16,7 @@ case_plot <- dengue_singapore |>
     axis.title.y = element_text(size = 17, family = plot_font), axis.title.x = element_text(size = 14, family = plot_font, color = "white"),
     legend.title = element_text(size = 14, family = plot_font), legend.text = element_text(size = 14, family = plot_font),
     legend.key.height = unit(1.2, "cm")
-  ) # change legend key height)
+  ) 
 
 dengue_singapore <- dengue_singapore |>
   mutate(nino34_20_wk_ma = rollmean(nino34, 20, fill = NA, align = "right"))
