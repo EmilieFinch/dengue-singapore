@@ -54,45 +54,45 @@ lag_data <- function(data) {
     bind_cols(setNames(shift(df_model$ab_hum_scale,seq(2,16, by = 2)), c(paste0("ab_hum_scale_", seq(2,16, by = 2))))) |> 
     bind_cols(setNames(shift(df_model$nino34,seq(2,20, by = 2)), c(paste0("nino34_", seq(2,20, by = 2))))) |> 
     
-    bind_cols(setNames(shift(df_model$mean_t_scale_4_wk_avg,seq(2,12, by = 2)), c(paste0("mean_t_scale_4_wk_avg_", seq(2,12, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$min_t_scale_4_wk_avg,seq(2,12, by = 2)), c(paste0("min_t_scale_4_wk_avg_", seq(2,12, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$max_t_scale_4_wk_avg,seq(2,12, by = 2)), c(paste0("max_t_scale_4_wk_avg_", seq(2,12, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$prec_scale_4_wk_total,seq(2,12, by = 2)), c(paste0("prec_scale_4_wk_total_", seq(2,12, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$days_no_rain_4_wk_total,seq(2,12, by = 2)), c(paste0("days_no_rain_4_wk_total_", seq(2,12, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$ab_hum_scale_4_wk_avg,seq(2,12, by = 2)), c(paste0("ab_hum_scale_4_wk_avg_", seq(2,12, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$nino34_4_wk_avg,seq(2,16, by = 2)), c(paste0("nino34_4_wk_avg", seq(2,16, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$mean_t_scale_4_wk_avg_0,seq(2,12, by = 2)), c(paste0("mean_t_scale_4_wk_avg_", seq(2,12, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$min_t_scale_4_wk_avg_0,seq(2,12, by = 2)), c(paste0("min_t_scale_4_wk_avg_", seq(2,12, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$max_t_scale_4_wk_avg_0,seq(2,12, by = 2)), c(paste0("max_t_scale_4_wk_avg_", seq(2,12, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$prec_scale_4_wk_total_0,seq(2,12, by = 2)), c(paste0("prec_scale_4_wk_total_", seq(2,12, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$days_no_rain_4_wk_total_0,seq(2,12, by = 2)), c(paste0("days_no_rain_4_wk_total_", seq(2,12, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$ab_hum_scale_4_wk_avg_0,seq(2,12, by = 2)), c(paste0("ab_hum_scale_4_wk_avg_", seq(2,12, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$nino34_4_wk_avg_0,seq(2,16, by = 2)), c(paste0("nino34_4_wk_avg", seq(2,16, by = 2))))) |> 
     
-    bind_cols(setNames(shift(df_model$mean_t_scale_6_wk_avg,seq(2,10, by = 2)), c(paste0("mean_t_scale_6_wk_avg_", seq(2,10, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$min_t_scale_6_wk_avg,seq(2,10, by = 2)), c(paste0("min_t_scale_6_wk_avg_", seq(2,10, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$max_t_scale_6_wk_avg,seq(2,10, by = 2)), c(paste0("max_t_scale_6_wk_avg_", seq(2,10, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$prec_scale_6_wk_total,seq(2,10, by = 2)), c(paste0("prec_scale_6_wk_total_", seq(2,10, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$days_no_rain_6_wk_total,seq(2,10, by = 2)), c(paste0("days_no_rain_6_wk_total_", seq(2,10, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$ab_hum_scale_6_wk_avg,seq(2,10, by = 2)), c(paste0("ab_hum_scale_6_wk_avg_", seq(2,10, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$nino34_6_wk_avg,seq(2,14, by = 2)), c(paste0("nino34_6_wk_avg_", seq(2,14, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$mean_t_scale_6_wk_avg_0,seq(2,10, by = 2)), c(paste0("mean_t_scale_6_wk_avg_", seq(2,10, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$min_t_scale_6_wk_avg_0,seq(2,10, by = 2)), c(paste0("min_t_scale_6_wk_avg_", seq(2,10, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$max_t_scale_6_wk_avg_0,seq(2,10, by = 2)), c(paste0("max_t_scale_6_wk_avg_", seq(2,10, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$prec_scale_6_wk_total_0,seq(2,10, by = 2)), c(paste0("prec_scale_6_wk_total_", seq(2,10, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$days_no_rain_6_wk_total_0,seq(2,10, by = 2)), c(paste0("days_no_rain_6_wk_total_", seq(2,10, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$ab_hum_scale_6_wk_avg_0,seq(2,10, by = 2)), c(paste0("ab_hum_scale_6_wk_avg_", seq(2,10, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$nino34_6_wk_avg_0,seq(2,14, by = 2)), c(paste0("nino34_6_wk_avg_", seq(2,14, by = 2))))) |> 
     
-    bind_cols(setNames(shift(df_model$mean_t_scale_8_wk_avg,seq(2,8, by = 2)), c(paste0("mean_t_scale_8_wk_avg_", seq(2,8, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$min_t_scale_8_wk_avg,seq(2,8, by = 2)), c(paste0("min_t_scale_8_wk_avg_", seq(2,8, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$max_t_scale_8_wk_avg,seq(2,8, by = 2)), c(paste0("max_t_scale_8_wk_avg_", seq(2,8, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$prec_scale_8_wk_total,seq(2,8, by = 2)), c(paste0("prec_scale_8_wk_total_", seq(2,8, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$days_no_rain_8_wk_total,seq(2,8, by = 2)), c(paste0("days_no_rain_8_wk_total_", seq(2,8, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$ab_hum_scale_8_wk_avg,seq(2,8, by = 2)), c(paste0("ab_hum_scale_8_wk_avg_", seq(2,8, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$nino34_8_wk_avg,seq(2,12, by = 2)), c(paste0("nino34_8_wk_avg_", seq(2,12, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$mean_t_scale_8_wk_avg_0,seq(2,8, by = 2)), c(paste0("mean_t_scale_8_wk_avg_", seq(2,8, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$min_t_scale_8_wk_avg_0,seq(2,8, by = 2)), c(paste0("min_t_scale_8_wk_avg_", seq(2,8, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$max_t_scale_8_wk_avg_0,seq(2,8, by = 2)), c(paste0("max_t_scale_8_wk_avg_", seq(2,8, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$prec_scale_8_wk_total_0,seq(2,8, by = 2)), c(paste0("prec_scale_8_wk_total_", seq(2,8, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$days_no_rain_8_wk_total_0,seq(2,8, by = 2)), c(paste0("days_no_rain_8_wk_total_", seq(2,8, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$ab_hum_scale_8_wk_avg_0,seq(2,8, by = 2)), c(paste0("ab_hum_scale_8_wk_avg_", seq(2,8, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$nino34_8_wk_avg_0,seq(2,12, by = 2)), c(paste0("nino34_8_wk_avg_", seq(2,12, by = 2))))) |> 
     
-    bind_cols(setNames(shift(df_model$mean_t_scale_10_wk_avg,seq(2,6, by = 2)), c(paste0("mean_t_scale_10_wk_avg_", seq(2,6, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$min_t_scale_10_wk_avg,seq(2,6, by = 2)), c(paste0("min_t_scale_10_wk_avg_", seq(2,6, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$max_t_scale_10_wk_avg,seq(2,6, by = 2)), c(paste0("max_t_scale_10_wk_avg_", seq(2,6, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$prec_scale_10_wk_total,seq(2,6, by = 2)), c(paste0("prec_scale_10_wk_total_", seq(2,6, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$days_no_rain_10_wk_total,seq(2,6, by = 2)), c(paste0("days_no_rain_10_wk_total_", seq(2,6, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$ab_hum_scale_10_wk_avg,seq(2,6, by = 2)), c(paste0("ab_hum_scale_10_wk_avg_", seq(2,6, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$nino34_10_wk_avg,seq(2,10, by = 2)), c(paste0("nino34_10_wk_avg_", seq(2,10, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$mean_t_scale_10_wk_avg_0,seq(2,6, by = 2)), c(paste0("mean_t_scale_10_wk_avg_", seq(2,6, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$min_t_scale_10_wk_avg_0,seq(2,6, by = 2)), c(paste0("min_t_scale_10_wk_avg_", seq(2,6, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$max_t_scale_10_wk_avg_0,seq(2,6, by = 2)), c(paste0("max_t_scale_10_wk_avg_", seq(2,6, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$prec_scale_10_wk_total_0,seq(2,6, by = 2)), c(paste0("prec_scale_10_wk_total_", seq(2,6, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$days_no_rain_10_wk_total_0,seq(2,6, by = 2)), c(paste0("days_no_rain_10_wk_total_", seq(2,6, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$ab_hum_scale_10_wk_avg_0,seq(2,6, by = 2)), c(paste0("ab_hum_scale_10_wk_avg_", seq(2,6, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$nino34_10_wk_avg_0,seq(2,10, by = 2)), c(paste0("nino34_10_wk_avg_", seq(2,10, by = 2))))) |> 
     
-    bind_cols(setNames(shift(df_model$mean_t_scale_12_wk_avg,seq(2,4, by = 2)), c(paste0("mean_t_scale_12_wk_avg_", seq(2,4, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$min_t_scale_12_wk_avg,seq(2,4, by = 2)), c(paste0("min_t_scale_12_wk_avg_", seq(2,4, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$max_t_scale_12_wk_avg,seq(2,4, by = 2)), c(paste0("max_t_scale_12_wk_avg_", seq(2,4, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$prec_scale_12_wk_total,seq(2,4, by = 2)), c(paste0("prec_scale_12_wk_total_", seq(2,4, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$days_no_rain_12_wk_total,seq(2,4, by = 2)), c(paste0("days_no_rain_12_wk_total_", seq(2,4, by = 2))))) |> 
-    bind_cols(setNames(shift(df_model$ab_hum_scale_12_wk_avg,seq(2,4, by = 2)), c(paste0("ab_hum_scale_12_wk_avg_", seq(2,4, by = 2)))))  |> 
-    bind_cols(setNames(shift(df_model$nino34_12_wk_avg,seq(2,8, by = 2)), c(paste0("nino34_12_wk_avg_", seq(2,8, by = 2)))))  
+    bind_cols(setNames(shift(df_model$mean_t_scale_12_wk_avg_0,seq(2,4, by = 2)), c(paste0("mean_t_scale_12_wk_avg_", seq(2,4, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$min_t_scale_12_wk_avg_0,seq(2,4, by = 2)), c(paste0("min_t_scale_12_wk_avg_", seq(2,4, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$max_t_scale_12_wk_avg_0,seq(2,4, by = 2)), c(paste0("max_t_scale_12_wk_avg_", seq(2,4, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$prec_scale_12_wk_total_0,seq(2,4, by = 2)), c(paste0("prec_scale_12_wk_total_", seq(2,4, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$days_no_rain_12_wk_total_0,seq(2,4, by = 2)), c(paste0("days_no_rain_12_wk_total_", seq(2,4, by = 2))))) |> 
+    bind_cols(setNames(shift(df_model$ab_hum_scale_12_wk_avg_0,seq(2,4, by = 2)), c(paste0("ab_hum_scale_12_wk_avg_", seq(2,4, by = 2)))))  |> 
+    bind_cols(setNames(shift(df_model$nino34_12_wk_avg_0,seq(2,8, by = 2)), c(paste0("nino34_12_wk_avg_", seq(2,8, by = 2)))))  
   
   # Add lagged version of time vars of interest
 
