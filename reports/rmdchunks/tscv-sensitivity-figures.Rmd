@@ -1,0 +1,236 @@
+## TSCV sensitivity analysis {.tabset}
+
+
+```{r, include = FALSE}
+
+tscv_0 <- read_results(date = NULL, type = "tscv-preds-sensitivity", horizon = 0)
+tscv_2 <- read_results(date = NULL, type = "tscv-preds-sensitivity", horizon = 2)
+tscv_4 <- read_results(date = NULL, type = "tscv-preds-sensitivity", horizon = 4)
+tscv_6 <- read_results(date = NULL, type = "tscv-preds-sensitivity", horizon = 6)
+tscv_8 <- read_results(date = NULL, type = "tscv-preds-sensitivity", horizon = 8)
+
+tscv_preds <- get_pred_quantiles(tscv_0, 0, df_eval) |> # input file names for each forecast horizon
+  rbind(get_pred_quantiles(tscv_2, 2, df_eval) |>
+  rbind(get_pred_quantiles(tscv_4, 4, df_eval) |>
+  rbind(get_pred_quantiles(tscv_6, 6, df_eval) |>
+  rbind(get_pred_quantiles(tscv_8, 8, df_eval)))))
+
+tscv_scores <- score_tscv(tscv_0, df_eval, 0) |> 
+  rbind(score_tscv(tscv_2, df_eval, 2) |> 
+  rbind(score_tscv(tscv_4, df_eval, 4),
+  rbind(score_tscv(tscv_6, df_eval, 6),
+  rbind(score_tscv(tscv_8, df_eval, 8)))))
+
+```
+
+```{r, include = FALSE}
+# Supplementary Figure 3 - dengue forecasts for early warning at 4 and 8 week forecast horizons with no yearly random effect ---------------------------------------
+
+pal <- c("Climate and serotype" = "#7570B3", "Climate only" = "#E7298A", "Serotype only" = "#1B9E77", "Seasonal baseline" = "#D95F02")
+
+
+tscv_preds_sensitivity <- tscv_preds |>
+  mutate(
+    mod = factor(mod, levels = c("sero-climate", "climate-only", "sero-only", "seasonal-baseline", "seasonal-year-baseline"), labels = c("Climate and serotype", "Climate only", "Serotype only", "Seasonal baseline", "Seasonal baseline with year")),
+    horizon = factor(horizon, levels = c("0", "2", "4", "6", "8"), labels = c("0 weeks ahead", "2 weeks ahead", "4 weeks ahead", "6 weeks ahead", "8 weeks ahead"))
+  ) |>
+  filter(horizon != "0 weeks ahead") |>
+  filter(mod != "Seasonal baseline with year") |>
+  ggplot() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = date, fill = factor(mod), group = factor(mod)), alpha = 0.3) +
+  geom_line(aes(y = median, x = date, col = factor(mod), group = factor(mod)), size = 0.5) +
+  geom_line(aes(y = true_cases, x = date), col = "#000000", size = 0.3) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2008-01-01"), as.Date("2023-03-15")),
+    date_breaks = "2 years",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  coord_cartesian(ylim = c(0, 2250)) +
+  facet_grid(mod ~ horizon, switch = "y") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 9.5, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm"),
+  )
+
+ggsave(filename = here(output_folder, "figure-S3.jpeg"), tscv_preds_sensitivity, width = 600, height = 300, units = "mm", bg="white", dpi = 300)
+
+```
+
+### Figure S.3
+
+```{r, fig.width = 24, fig.height = 12}
+tscv_preds_horizon_all
+```
+
+```{r, include = FALSE}
+
+# Figure 6 - Forecast scores over forecast horizons -----------------------------------------------------------------------------------------------
+
+tscv_scores <- tscv_scores |>
+  group_by(horizon) |>
+  mutate(baseline = crps_natural[mod == "seasonal-baseline"]) |>
+  mutate(crpss = (1 - crps_natural / baseline) * 100) |>
+  select(-c(baseline)) |>
+  ungroup() |>
+  mutate(mod = factor(mod, levels = c("sero-climate", "climate-only", "sero-only", "seasonal-baseline", "seasonal-year-baseline"), labels = c("Climate and serotype", "Climate only", "Serotype only", "Seasonal baseline", "Seasonal baseline with year"))) |>
+  mutate(auc = auc * 100, false_alarm = false_alarm * 100, hit_rate = hit_rate * 100) |>
+  filter(mod != "Seasonal baseline with year") |>
+  pivot_longer(cols = c("crps_natural", "crpss", "crps_log", "auc", "false_alarm", "hit_rate", "brier_score", "bias", "coverage_50", "coverage_95")) |>
+  mutate(name = factor(name, levels = c("crps_log", "crps_natural", "crpss", "brier_score", "auc", "hit_rate", "false_alarm", "bias", "coverage_50", "coverage_95"), labels = c("CRPS (log scale)", "CRPS", "CRPSS", "Brier score", "AUC (%)", "Hit rate (%)", "False alarm rate (%)", "Bias", "50%", "95%"))) |>
+  filter(name != "CRPS (log scale)")
+
+# Plot separately to control min and max y limits
+crps_facet <- tscv_scores |>
+  filter(name == "CRPS") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_color_manual(values = pal) +
+  scale_y_continuous(limits = c(100, max(tscv_scores$value[tscv_scores$name == "CRPS"]))) +
+  labs(x = "", y = "CRPS", col = NULL) +
+  theme_bw() +
+  guides(color = "none") +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+crpss_facet <- tscv_scores |>
+  filter(name == "CRPSS") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(-15, 15), breaks = seq(-15, 15, by = 5)) +
+  scale_color_manual(values = pal) +
+  labs(x = "", y = "CRPSS (%)", col = NULL) +
+  guides(color = "none") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm"))
+  
+
+bias_facet <- tscv_scores |>
+  filter(name == "Bias") |>
+  ggplot() +
+  geom_hline(yintercept = 0, lty = "longdash", size = 0.35) +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(-1, 1)) +
+  scale_color_manual(values = pal) +
+  guides(color = "none") +
+  labs(x = "", y = "Bias", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none")
+  
+
+coverage_facet <- tscv_scores |>
+  filter(name == "50%" | name == "95%") |>
+  ggplot() +
+  geom_hline(yintercept = 95, lty = "longdash", size = 0.35) +
+  geom_hline(yintercept = 50, lty = "longdash", size = 0.35) +
+  geom_point(aes(x = horizon, y = value*100, col = mod)) +
+  geom_line(aes(x = horizon, y = value*100, col = mod, lty = name), size = 0.4, alpha = 0.5) +
+  scale_color_manual(values = pal) +
+  scale_linetype_manual(values = c(1,6)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "", y = "Coverage (%)", col = NULL, lty = "Coverage level") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom" , legend.title = element_text(size = 14, family = plot_font),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+brier_facet <- tscv_scores |>
+  filter(name == "Brier score") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_color_manual(values = pal) +
+  scale_y_continuous(limits = c(0, max(tscv_scores$value[tscv_scores$name == "Brier score"]))) +
+  labs(x = "", y = "Brier score", col = NULL) +
+  guides(color = "none") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+auc_facet <- tscv_scores |>
+  filter(name == "AUC (%)") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 20))) +
+  scale_color_manual(values = pal) +
+  guides(color = "none") +
+  labs(x = "", y = "AUC (%)", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+hit_facet <- tscv_scores |>
+  filter(name == "Hit rate (%)") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 25))) +
+  scale_color_manual(values = pal) +
+  guides(color = "none") +
+  labs(x = "Forecast horizon", y = "Hit rate (%)", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+false_alarm_facet <- tscv_scores |>
+  filter(name == "False alarm rate (%)") |>
+  ggplot() +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 25))) +
+  scale_color_manual(values = pal) +
+  guides(color = "none") +
+  labs(x = "Forecast horizon", y = "False alarm rate (%)", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
+  )
+
+score_plot <- ggarrange(coverage_facet, bias_facet, crps_facet, crpss_facet,  brier_facet, auc_facet, hit_facet, false_alarm_facet, nrow = 4, ncol = 2, common.legend = TRUE, legend = "bottom")
+ggsave(filename = here(output_folder, "figure-S4.jpeg"), score_plot, width = 360, height = 360, units = "mm", bg="white", dpi = 300)
+
+```
+
+### Figure S.4
+
+```{r, fig.height = 15, fig.width = 15}
+score_plot
+```
+

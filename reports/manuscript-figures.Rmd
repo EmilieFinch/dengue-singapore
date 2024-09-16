@@ -49,3 +49,6 @@ output_folder <- here("figures", Sys.Date())
 ```{r tscv-output-figures, child = "rmdchunks/tscv-output-figures.Rmd"}
 ```
 
+```{r tscv-sensitivity-figures, child = "rmdchunks/tscv-sensitivity-figures.Rmd"}
+```
+
