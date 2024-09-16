@@ -8,7 +8,7 @@
 # Load data and fns for analysis
 
 if (!exists("dengue_singapore")) {
-  source(here("code", "00_read-data.R"))
+  source(here("R", "00_read-data.R"))
 }
 source(here("R", "create-lagged-data_fn.R"))
 source(here("R", "fit-inla_fn.R"))
