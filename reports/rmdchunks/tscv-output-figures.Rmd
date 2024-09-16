@@ -1,11 +1,10 @@
 
 ## TSCV output figures {.tabset}
 
-### Figure 3
 
 ```{r, include = TRUE}
 horizon <- 0
-tscv_output <- read_results(date = NULL, type = "tscv-preds", horizon = horizon)
+tscv_output <- read_results(date = NULL, type = "tscv-preds-weekly", horizon = horizon)
 ```
 
 ```{r, include = FALSE}
@@ -66,6 +65,7 @@ tscv_preds <- get_pred_quantiles(tscv_output, horizon, df_eval)
 tscv_outbreaks <- get_outbreak_preds(tscv_output, df_eval)
 ```
 
+### Figure 3
 
 ```{r}
 
@@ -292,11 +292,11 @@ tscv_roc
 
 ```{r, include = FALSE}
 
-tscv_0 <- read_results(date = NULL, type = "tscv-preds", horizon = 0)
-tscv_2 <- read_results(date = NULL, type = "tscv-preds", horizon = 2)
-tscv_4 <- read_results(date = NULL, type = "tscv-preds", horizon = 4)
-tscv_6 <- read_results(date = NULL, type = "tscv-preds", horizon = 6)
-tscv_8 <- read_results(date = NULL, type = "tscv-preds", horizon = 8)
+tscv_0 <- read_results(date = NULL, type = "tscv-preds-weekly", horizon = 0)
+tscv_2 <- read_results(date = NULL, type = "tscv-preds-weekly", horizon = 2)
+tscv_4 <- read_results(date = NULL, type = "tscv-preds-weekly", horizon = 4)
+tscv_6 <- read_results(date = NULL, type = "tscv-preds-weekly", horizon = 6)
+tscv_8 <- read_results(date = NULL, type = "tscv-preds-weekly", horizon = 8)
 
 tscv_preds <- get_pred_quantiles(tscv_0, 0, df_eval) |> # input file names for each forecast horizon
   rbind(get_pred_quantiles(tscv_2, 2, df_eval) |>
@@ -309,6 +309,7 @@ tscv_scores <- score_tscv(tscv_0, df_eval, 0) |>
   rbind(score_tscv(tscv_4, df_eval, 4),
   rbind(score_tscv(tscv_6, df_eval, 6),
   rbind(score_tscv(tscv_8, df_eval, 8)))))
+
 # Figure 5 - dengue forecasts for early warning at 4 and 8 week forecast horizons -----------------------------------------------------------
 
 pal <- c("Climate and serotype" = "#7570B3", "Climate only" = "#E7298A", "Serotype only" = "#1B9E77", "Seasonal baseline" = "#D95F02")
@@ -408,11 +409,11 @@ tscv_scores <- tscv_scores |>
   mutate(mod = factor(mod, levels = c("sero-climate", "climate-only", "sero-only", "seasonal-baseline", "seasonal-year-baseline"), labels = c("Climate and serotype", "Climate only", "Serotype only", "Seasonal baseline", "Seasonal baseline with year"))) |>
   mutate(auc = auc * 100, false_alarm = false_alarm * 100, hit_rate = hit_rate * 100) |>
   filter(mod != "Seasonal baseline with year") |>
-  pivot_longer(cols = c("crps_natural", "crpss", "crps_log", "auc", "false_alarm", "hit_rate", "brier_score")) |>
-  mutate(name = factor(name, levels = c("crps_log", "crps_natural", "crpss", "brier_score", "auc", "hit_rate", "false_alarm"), labels = c("CRPS (log scale)", "CRPS", "CRPSS", "Brier score", "AUC (%)", "Hit rate (%)", "False alarm rate (%)"))) |>
+  pivot_longer(cols = c("crps_natural", "crpss", "crps_log", "auc", "false_alarm", "hit_rate", "brier_score", "bias", "coverage_50", "coverage_95")) |>
+  mutate(name = factor(name, levels = c("crps_log", "crps_natural", "crpss", "brier_score", "auc", "hit_rate", "false_alarm", "bias", "coverage_50", "coverage_95"), labels = c("CRPS (log scale)", "CRPS", "CRPSS", "Brier score", "AUC (%)", "Hit rate (%)", "False alarm rate (%)", "Bias", "50%", "95%"))) |>
   filter(name != "CRPS (log scale)")
 
-# Plot seperately to control min and max y limits
+# Plot separately to control min and max y limits
 crps_facet <- tscv_scores |>
   filter(name == "CRPS") |>
   ggplot() +
@@ -422,9 +423,10 @@ crps_facet <- tscv_scores |>
   scale_y_continuous(limits = c(0, max(tscv_scores$value[tscv_scores$name == "CRPS"]))) +
   labs(x = "", y = "CRPS", col = NULL) +
   theme_bw() +
+  guides(color = "none") +
   theme(
     axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
     strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
     legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
   )
@@ -437,10 +439,46 @@ crpss_facet <- tscv_scores |>
   scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 20))) +
   scale_color_manual(values = pal) +
   labs(x = "", y = "CRPSS (%)", col = NULL) +
+  guides(color = "none") +
   theme_bw() +
   theme(
     axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
+    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
+    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm"))
+  
+
+bias_facet <- tscv_scores |>
+  filter(name == "Bias") |>
+  ggplot() +
+  geom_hline(yintercept = 0, lty = "longdash", size = 0.35) +
+  geom_point(aes(x = horizon, y = value, col = mod)) +
+  geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
+  scale_y_continuous(limits = c(-0.2, 0.2)) +
+  scale_color_manual(values = pal) +
+  guides(color = "none") +
+  labs(x = "", y = "Bias", col = NULL) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none")
+  
+
+coverage_facet <- tscv_scores |>
+  filter(name == "50%" | name == "95%") |>
+  ggplot() +
+  geom_hline(yintercept = 95, lty = "longdash", size = 0.35) +
+  geom_hline(yintercept = 50, lty = "longdash", size = 0.35) +
+  geom_point(aes(x = horizon, y = value*100, col = mod)) +
+  geom_line(aes(x = horizon, y = value*100, col = mod, lty = name), size = 0.4, alpha = 0.5) +
+  scale_color_manual(values = pal) +
+  scale_linetype_manual(values = c(1,6)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "", y = "Coverage (%)", col = NULL, lty = "Coverage level") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom" , legend.title = element_text(size = 14, family = plot_font),
     strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
     legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
   )
@@ -453,10 +491,11 @@ brier_facet <- tscv_scores |>
   scale_color_manual(values = pal) +
   scale_y_continuous(limits = c(0, max(tscv_scores$value[tscv_scores$name == "Brier score"]))) +
   labs(x = "", y = "Brier score", col = NULL) +
+  guides(color = "none") +
   theme_bw() +
   theme(
     axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
     strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
     legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
   )
@@ -468,11 +507,12 @@ auc_facet <- tscv_scores |>
   geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
   scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 20))) +
   scale_color_manual(values = pal) +
+  guides(color = "none") +
   labs(x = "", y = "AUC (%)", col = NULL) +
   theme_bw() +
   theme(
     axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
     strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
     legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
   )
@@ -484,11 +524,12 @@ hit_facet <- tscv_scores |>
   geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
   scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 25))) +
   scale_color_manual(values = pal) +
+  guides(color = "none") +
   labs(x = "Forecast horizon", y = "Hit rate (%)", col = NULL) +
   theme_bw() +
   theme(
     axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
     strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
     legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
   )
@@ -500,21 +541,71 @@ false_alarm_facet <- tscv_scores |>
   geom_line(aes(x = horizon, y = value, col = mod), size = 0.4, alpha = 0.5) +
   scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 25))) +
   scale_color_manual(values = pal) +
-  labs(x = "", y = "False alarm rate (%)", col = NULL) +
+  guides(color = "none") +
+  labs(x = "Forecast horizon", y = "False alarm rate (%)", col = NULL) +
   theme_bw() +
   theme(
     axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
     strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
     legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
   )
 
-score_plot <- ggarrange(crps_facet, crpss_facet, brier_facet, auc_facet, hit_facet, false_alarm_facet, nrow = 2, ncol = 3, common.legend = TRUE, legend = "bottom")
-ggsave(filename = here(output_folder, "figure-6.jpeg"), score_plot, width = 360, height = 240, units = "mm", bg="white", dpi = 300)
+score_plot <- ggarrange(coverage_facet, bias_facet, crps_facet, crpss_facet,  brier_facet, auc_facet, hit_facet, false_alarm_facet, nrow = 4, ncol = 2, common.legend = TRUE, legend = "bottom")
+ggsave(filename = here(output_folder, "figure-6.jpeg"), score_plot, width = 360, height = 360, units = "mm", bg="white", dpi = 300)
 
 ```
 
-```{r, fig.height = 9, fig.width = 15}
+```{r, fig.height = 15, fig.width = 15}
 score_plot
+```
+
+## Supplementary Figure 1
+
+```{r}
+
+# NEA thresholds published in CHen et al 2020, Table 1
+nea_thresholds <- data.frame(
+  year = c(2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017),
+  nea_threshold = c(339, 280, 191, 200, 165, 243, 252, 260, 273),
+  nea_past_threshold = c(NA, 339, 280, 191, 200, 165, 243, 252, 260)
+)
+
+past_threshold <- 273
+
+# Calculate thresholds for more recent years using NEA definition as follows:
+# Exclude any 'outlier' cases (defined as cases > threshold for that year)
+# Then calculate an annual threshold as the mean weekluy count + 2SD of the past 5 years
+
+for(i in 2018:2022){
+  nea_thresholds <- nea_thresholds |> 
+    bind_rows(df_eval |> 
+    left_join(nea_thresholds, by = "year") |> 
+    filter(year >= (i - 5) & year < i & cases < nea_past_threshold)  |> 
+    summarize(year = i, nea_threshold = round(mean(cases, na.rm = TRUE) + 2*sd(cases, na.rm = TRUE))) |> 
+    mutate(nea_past_threshold = past_threshold) |> 
+    select(year, nea_threshold, nea_past_threshold))
+  
+  past_threshold <- tail(nea_thresholds$nea_threshold,1)
+  print(past_threshold)
+}
+
+df_eval <- df_eval |> 
+  left_join(nea_thresholds, by = "year") 
+
+pal <- c("Endemic channel" = "#8c510a", "75th percentile" = "#01665e")
+threshold_plot <- case_plot + 
+  geom_line(aes(x = df_eval$date, y = df_eval$nea_threshold, col = "Endemic channel")) +
+  geom_line(aes(x = df_eval$date, y = df_eval$threshold, col = "75th percentile")) +
+  labs(x = "Date", y = "Dengue cases", color = "Threshold") +
+  scale_color_manual(values = pal) +
+  theme(legend.position = "bottom")
+  ggsave(filename = here(output_folder, "figure-S1.jpeg"), threshold_plot, width = 360, height = 180, units = "mm", bg="white", dpi = 300)
+
+```
+
+
+```{r, fig.height = 9, fig.width = 18}
+threshold_plot
 ```
 

@@ -10,6 +10,8 @@ get_pred_quantiles <- function(preds, lag, data_input) {
       median = matrixStats::rowQuantiles(preds[[p]]$post.samples, cols = c(1:1000), probs = 0.5),
       lower = matrixStats::rowQuantiles(preds[[p]]$post.samples, cols = c(1:1000), probs = 0.025),
       upper = matrixStats::rowQuantiles(preds[[p]]$post.samples, cols = c(1:1000), probs = 0.975),
+      lower_50 = matrixStats::rowQuantiles(preds[[p]]$post.samples, cols = c(1:1000), probs = 0.25),
+      upper_50 = matrixStats::rowQuantiles(preds[[p]]$post.samples, cols = c(1:1000), probs = 0.75),
       mod = preds[[p]]$mod,
       horizon = lag
     )
@@ -127,6 +129,19 @@ get_crps <- function(preds, data_input) {
   return(scores)
 }
 
+get_coverage <- function(preds, data_input, horizon){
+  coverage <- get_pred_quantiles(preds, horizon, data_input) |> 
+    rename(target_end_date = date, true_value = true_cases, `0.5` = median, `0.025` = lower, `0.975` = upper, `0.25` = lower_50, `0.75` = upper_50, model = mod) |> 
+    pivot_longer(cols = c(`0.5`, `0.025`, `0.975`, `0.25`, `0.75`), names_to = "quantile", values_to = "prediction") |> 
+    mutate(quantile = as.numeric(quantile)) |> 
+    score() |> 
+    add_coverage(by = c("model"), ranges = c(50,95)) |> 
+    summarise_scores(by = c("model"), na.rm = TRUE) |> 
+    rename(mod = model) |> 
+    select(mod, coverage_50, coverage_95)
+  
+  return(coverage)
+}
 # Function to calculate brier score
 
 get_brier <- function(preds, data_input) {
@@ -158,7 +173,7 @@ read_results <- function(date = NULL, type = "main-output", horizon = NULL){
     date <- max(dates, na.rm = TRUE)
   } 
   
-  if(type == "tscv-preds"){
+  if(type == "tscv-preds" | type == "tscv-preds-sensitivity"){
     date_files <- files[dates == date]
     horizons <- sub("^.*(horizon-[0-8]).*$", "\\1", date_files)
     horizons <- as.numeric(sub("^.*([0-9]+).*$", "\\1", horizons))
@@ -179,6 +194,7 @@ score_tscv <- function(tscv_output, data, horizon){
   tscv_crps <- get_crps(tscv_output, data)
   tscv_brier <- get_brier(tscv_output, data)
   tscv_outbreaks <- get_outbreak_preds(tscv_output, data)
+  tscv_coverage <- get_coverage(tscv_output, data, horizon)
   hit_rates <- get_hit_rates(tscv_outbreaks)
   roc_curves <- get_roc_coords(tscv_outbreaks)
   
@@ -195,6 +211,10 @@ score_tscv <- function(tscv_output, data, horizon){
                 select(mod, trigger, rate, rate_type) |>
                 pivot_wider(names_from = rate_type, values_from = rate)) |>
     left_join(tscv_brier) |> 
+    left_join(tscv_coverage) |> 
+    left_join(tscv_crps |> 
+                filter(scale == "natural") |> 
+                select(mod, bias)) |> 
     mutate(horizon = horizon)
   
   return(score_table)

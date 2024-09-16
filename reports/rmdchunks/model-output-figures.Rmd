@@ -20,7 +20,7 @@ nino_effect_plot <-
   geom_hline(yintercept = 1, lty = "dashed") +
   scale_y_continuous(limits = c(0.2, 5.25), breaks = seq(0.5, 5, by = 0.5)) +
   scale_x_continuous(limits = c(-1.7, 2.65)) +
-  labs(x = NULL, y = "Effect size") +
+  labs(x = NULL, y = "Relative risk") +
   theme_classic() +
   theme(
     axis.text.x = element_blank(), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
@@ -48,7 +48,7 @@ sero_effect_plot <-
   geom_ribbon(aes(ymin = exp(`0.025quant`), ymax = exp(`0.975quant`), x = ID), alpha = 0.3, fill = "#235070") +
   geom_hline(yintercept = 1, lty = "dashed") +
   scale_y_continuous(limits = c(0.2, 4), breaks = seq(0.5, 4, by = 0.5)) +
-  labs(x = NULL, y = "Effect size") +
+  labs(x = NULL, y = "Relative risk") +
   scale_x_continuous(limits = c(0, 365), breaks = seq(0, 365, by = 52)) +
   theme_classic() +
   theme(
@@ -77,7 +77,7 @@ temp_effect_plot <- ggplot(model_output$random_effects[[2]]$`inla.group(max_t_sc
   scale_y_continuous(limits = c(0.5, 1.5), breaks = seq(0.5, 1.5, by = 0.5)) +
   scale_x_continuous(limits = c(30.2, 33.5), breaks = seq(30, 33.5, by = 1)) +
   geom_hline(yintercept = 1, lty = "dashed") +
-  labs(x = NULL, y = "Effect size") +
+  labs(x = NULL, y = "Relative risk") +
   theme_classic() +
   theme(
     axis.text.x = element_blank(), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
@@ -105,7 +105,7 @@ prec_effect_plot <- ggplot(model_output$random_effects[[2]]$`inla.group(days_no_
   geom_hline(yintercept = 1, lty = "dashed") +
   scale_y_continuous(limits = c(0.5, 1.6), breaks = seq(0.5, 1.5, by = 0.5)) +
   scale_x_continuous(limits = c(15, 75), breaks = seq(15, 75, by = 10)) +
-  labs(x = paste0(NULL), y = "Effect size") +
+  labs(x = paste0(NULL), y = "Relative risk") +
   theme_classic() +
   theme(
     axis.text.x = element_blank(), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
