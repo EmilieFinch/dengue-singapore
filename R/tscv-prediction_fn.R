@@ -248,6 +248,12 @@ tscv_predictions_weekly <- function(data_input, # Data frame
     temp[["model"]] <- form_names[f]
     temp[["yearly_re"]] <- yearly_re
     temp_out[[f]] <- temp
+
+    output_dir <- here("output")
+    if (!dir.exists(output_dir)) {
+      dir.create(output_dir)
+    }
+
     saveRDS(temp_out, here("output", paste0(filename, "_lag-", horizon, "_", Sys.Date(), "_temp.rds")))
 
     # Remove temp file
