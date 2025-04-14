@@ -1,0 +1,153 @@
+## Comparison between INLA and LASSO forecasts {.tabset}
+
+```{r, include = FALSE}
+
+# Load in forecasts -------------------------------------------------------------------------
+
+lasso_predictions <- read.csv(here("output", "lasso_all_predict_2019-2022.csv")) |> 
+  clean_names() |> 
+  rename(date = index, model = model_desc, median = mean,lower = low, upper = high) |> 
+  mutate(horizon = case_when(model_id == 1 ~ 2, 
+                             model_id == 2 ~ 4,
+                             model_id == 3 ~ 6,
+                             model_id == 4 ~ 8,
+                             T ~ NA),
+         date = as.Date(date, format = "%d/%m/%Y"),
+         model = "LASSO") |> 
+  select(model, horizon, date, median, lower, upper)
+
+tscv_0 <- read_results(date = NULL, type = "tscv-preds-with-lag-cases", horizon = 0)
+tscv_2 <- read_results(date = NULL, type = "tscv-preds-with-lag-cases", horizon = 2)
+tscv_4 <- read_results(date = NULL, type = "tscv-preds-with-lag-cases", horizon = 4)
+tscv_6 <- read_results(date = NULL, type = "tscv-preds-with-lag-cases", horizon = 6)
+tscv_8 <- read_results(date = NULL, type = "tscv-preds-with-lag-cases", horizon = 8)
+
+tscv_predictions <- get_pred_quantiles(tscv_2, 2, df_eval) |> # input file names for each forecast horizon
+  rbind(get_pred_quantiles(tscv_4, 4, df_eval) |>
+  rbind(get_pred_quantiles(tscv_6, 6, df_eval) |>
+  rbind(get_pred_quantiles(tscv_8, 8, df_eval)))) |> 
+  filter((mod == "sero-climate" | mod == "seasonal-baseline") & date >= as.Date("2019-01-01")) |> 
+  mutate(mod = case_when(mod == "sero-climate" ~ "INLA", 
+                         mod == "seasonal-baseline" ~ "Baseline")) |> 
+  rename(model = mod) |> 
+  select(model, horizon, date, median, lower, upper, true_cases)
+
+cases <- tscv_predictions |> group_by(date) |> summarise(true_cases = unique(true_cases))
+
+all_predictions <- rbind(tscv_predictions |> select(-true_cases), lasso_predictions) 
+
+all_predictions <- merge(all_predictions, cases, by = "date")
+
+```
+
+### Figure S.7
+```{r}
+# Plot comparison of predictions
+pal <- c("INLA  " = "#7570B3","Baseline  " = "#D95F02", "LASSO  " = "#1B9E77")
+
+inla_lasso_compare <- all_predictions |>
+  mutate(model = factor(model, levels = c("INLA", "LASSO", "Baseline"), labels = c("INLA  ", "LASSO  ", "Baseline  ")),
+         horizon = factor(horizon, levels = c(2,4,6,8), labels = c("2 weeks ahead", "4 weeks ahead", "6 weeks ahead", "8 weeks ahead"))) |> 
+  ggplot() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = date, fill = factor(model), group = factor(model)), alpha = 0.3) +
+  geom_line(aes(y = median, x = date, col = factor(model), group = factor(model)), size = 0.3) +
+  geom_line(aes(y = true_cases, x = date), col = "#000000", size = 0.15) +
+  labs(x = NULL, y = NULL) +
+  scale_x_date( # fill was #4682B4
+    limits = c(as.Date("2019-01-01"), as.Date("2022-12-30")),
+    date_breaks = "6 months",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  coord_cartesian(ylim = c(0, 3000)) +
+  facet_grid(horizon ~ model, switch = "y") +
+  theme(legend.title = element_blank(),
+        strip.placement = "outside", strip.text = element_text(size = 8, family = plot_font), 
+        legend.text = element_text(size = 8, family = plot_font), strip.background = element_blank(),
+        legend.margin = margin(t = 0, r = 0, b = 1, l = 0))
+
+ggsave(filename = here(output_folder, "figure-S7.png"), inla_lasso_compare, width = 180, height = 120, units = "mm", bg="white", dpi = 300)
+
+```
+
+```{r}
+inla_lasso_compare
+```
+
+```{r, include = FALSE}
+
+# Score predictions
+theme_set(theme_bw() +
+            theme(
+              axis.text.x = element_text(size = 8, family = plot_font), axis.text.y = element_text(size = 8, family = plot_font), axis.title = element_text(size = 8, family = plot_font),
+              legend.text = element_text(size = 8, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
+              strip.placement = "outside", strip.text = element_text(size = 8, family = plot_font), strip.background = element_blank(),
+              legend.key.size = unit(0.5, "cm"), legend.spacing.x = unit(0.5, "cm"),
+              axis.line = element_line(colour = 'black', size = 0.15),
+              axis.ticks = element_line(colour = "black", size = 0.15),
+              axis.ticks.length=unit(0.5, "mm"),
+              plot.margin = margin(2,2,2,2)))
+
+scores_by_model <- all_predictions |>
+  rename(`0.5` = median, `0.025` = lower, `0.975` = upper) |> 
+  pivot_longer(cols = c(`0.5`, `0.025`, `0.975`), names_to = "quantile", values_to = "prediction") |> 
+  mutate(target_end_date = date, true_value = true_cases, quantile = as.numeric(quantile)) |> 
+  score() |> 
+  add_coverage(ranges = c(95), by = c("model", "horizon")) |> 
+  summarise_scores(by = c("model", "horizon"),
+                          relative_skiill = TRUE,
+                          baseline = "baseline") |> 
+  arrange(horizon) |> 
+  mutate(model = factor(model, levels = c("INLA", "LASSO", "Baseline"), labels = c("INLA  ", "LASSO  ", "Baseline  ")))
+
+scores_by_year <- all_predictions |>
+  mutate(year = year(date)) |> 
+  rename(`0.5` = median, `0.025` = lower, `0.975` = upper) |> 
+  pivot_longer(cols = c(`0.5`, `0.025`, `0.975`), names_to = "quantile", values_to = "prediction") |> 
+  mutate(target_end_date = date, true_value = true_cases, quantile = as.numeric(quantile)) |> 
+  score() |> 
+  add_coverage(ranges = c(95), by = c("model", "horizon", "year")) |> 
+  summarise_scores(by = c("model", "horizon", "year"),
+                   relative_skiill = TRUE,
+                   baseline = "baseline") |> 
+  arrange(horizon) 
+
+wis_facet <- scores_by_model |> 
+  select(model, horizon, interval_score) |> 
+  ggplot() +
+  geom_point(aes(x = horizon, y = interval_score, col = model), size = 1) +
+  geom_line(aes(x = horizon, y = interval_score, col = model), size = 0.4) +
+  scale_color_manual(values = pal) +
+  labs(y = "Weighted interval score", x = NULL) 
+
+ coverage_facet <- scores_by_model |> 
+   select(model, horizon, coverage_95) |> 
+   ggplot() +
+   geom_point(aes(x = horizon, y = coverage_95*100, col = model), size = 1) +
+   geom_line(aes(x = horizon, y = coverage_95*100, col = model), size = 0.4) +
+   geom_hline(yintercept = 95, lty = "longdash", size = 0.35) +
+   scale_y_continuous(limits = c(0,100, breaks = seq(0,100, by = 20))) +
+   scale_color_manual(values = pal) +
+   labs(y = "Coverage (%)", x = NULL) 
+ 
+ bias_facet <- scores_by_model |> 
+   select(model, horizon, bias) |> 
+   ggplot() +
+   geom_point(aes(x = horizon, y = bias, col = model), size = 1) +
+   geom_line(aes(x = horizon, y = bias, col = model), size = 0.4) +
+   geom_hline(yintercept = 0, lty = "longdash", size = 0.35) +
+   scale_color_manual(values = pal) +
+   scale_y_continuous(limits = c(-1,1), breaks = seq(-1,1, by = 0.5)) +
+   labs(y = "Bias", x = "Forecast horizon") 
+ score_plot <- ggarrange(wis_facet, coverage_facet, bias_facet, nrow = 3, ncol = 1, common.legend = TRUE, legend = "bottom", heights = c(1,1,1.2))
+
+ggsave(filename = here(output_folder, "figure-S8.png"), score_plot, width = 120, height = 150, units = "mm", bg="white", dpi = 300)
+ 
+```
+
+### Figure S.8
+```{r, fig.width = 7, fig.height = 7}
+score_plot
+```
+

@@ -34,6 +34,21 @@ font_add_google(plot_font)
 showtext_opts(dpi = 300)
 showtext_auto()
 
+# Set theme
+theme_set(theme_classic() +
+            theme(plot.title = element_text(size = 8, family = plot_font),
+                  axis.title = element_text(size = 8, family = plot_font),
+                  axis.text = element_text(size = 6, family = plot_font),
+                  legend.title = element_text(size = 7, family = plot_font), 
+                  legend.text = element_text(size = 6, family = plot_font),
+                  legend.margin = margin(-5, -5, -5, -5),
+                  legend.key.height = unit(0.3, "cm"), 
+                  legend.position = "bottom",
+                  legend.key.size = unit(0.5, 'cm'),
+                  axis.line = element_line(colour = 'black', size = 0.25),
+                   axis.ticks = element_line(colour = "black", size = 0.25),
+                   axis.ticks.length=unit(0.5, "mm")))
+
 dir.create(here("figures"))
 dir.create(here("figures", Sys.Date()))
 output_folder <- here("figures", Sys.Date())
@@ -52,3 +67,8 @@ output_folder <- here("figures", Sys.Date())
 ```{r tscv-sensitivity-figures, child = "rmdchunks/tscv-sensitivity-figures.Rmd"}
 ```
 
+```{r inla-lasso-figures, child = "rmdchunks/inla-lasso-figures.Rmd"}
+```
+
+```{r wolbachia-counterfactual-figures, child = "rmdchunks/wolbachia-counterfactual-figures.Rmd"}
+```

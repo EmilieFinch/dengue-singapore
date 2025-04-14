@@ -1,0 +1,101 @@
+## Wolbachia counterfactual figures {.tabset}
+
+### Figure 7
+
+```{r, include = FALSE}
+theme_set(theme_classic() +
+            theme(plot.title = element_text(size = 8, family = plot_font),
+                  axis.title = element_text(size = 8, family = plot_font),
+                  axis.text = element_text(size = 6, family = plot_font),
+                  legend.title = element_text(size = 7, family = plot_font), 
+                  legend.text = element_text(size = 6, family = plot_font),
+                  legend.margin = margin(-5, -5, -5, -5),
+                  legend.key.height = unit(0.3, "cm"), 
+                  legend.position = "bottom",
+                  legend.key.size = unit(0.5, 'cm'),
+                  axis.line = element_line(colour = 'black', size = 0.25),
+                   axis.ticks = element_line(colour = "black", size = 0.25),
+                   axis.ticks.length=unit(0.5, "mm")))
+
+wol_out <- read_results(type = "counterfactual-predictions")
+
+```
+
+```{r}
+
+  cols <- c("Tuning" = "#969696", "Counterfactual" = "#7570B3")
+  wolbachia_fig <- ggplot(wol_out |> filter(training_end_date == "2022-06-26")) +
+  geom_line(aes(y = cases, x = date), linewidth = 0.2, col = "#000000") +
+  geom_line(aes(y = median, x = date, col = flag), linewidth = 0.3) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x =  date, fill = flag), alpha = 0.4) +
+  labs(x = NULL, y = "Weekly dengue cases", col = NULL, fill = NULL) +
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  scale_x_date(
+    limits = c(as.Date("2000-01-01"), as.Date("2024-03-15")),
+    date_breaks = "1 year",
+    labels = scales::label_date_short(), expand = c(0, 0)
+  ) +
+    geom_vline(xintercept = as.Date("2022-06-26"), lty = "dashed", linewidth = 0.3) +
+  coord_cartesian(ylim = c(0, 1950))
+  ggsave(filename = here(output_folder, "figure-S9.png"), wolbachia_fig, width = 180, height = 120, units = "mm", bg="white", dpi = 300)
+
+  wolbachia_fig_zoom <- ggplot(wol_out |> filter(training_end_date == "2022-06-26")) +
+    geom_line(aes(y = cases, x = date), linewidth = 0.3, col = "#000000") +
+    geom_line(aes(y = median, x = date, col = flag), linewidth = 0.5) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, x =  date, fill = flag), alpha = 0.35) +
+    labs(x = NULL, y = "Weekly dengue cases") +
+    scale_color_manual(values = cols) +
+    scale_fill_manual(values = cols) +
+    scale_x_date(
+      limits = c(as.Date("2023-01-02"), as.Date("2024-01-15")),
+      date_breaks = "2 months",
+      labels = scales::label_date_short(), expand = c(0, 0)
+    ) +
+    geom_vline(xintercept = as.Date("2022-06-26"), lty = "dashed", linewidth = 0.3) +
+    coord_cartesian(ylim = c(0, 1950)) +
+    theme(legend.position = "none")
+  
+  ggsave(filename = here(output_folder, "figure-7.png"), wolbachia_fig_zoom, width = 180, height = 120, units = "mm", bg="white", dpi = 300)
+  
+```
+
+```{r}
+wolbachia_fig_zoom
+```
+
+### Figure S.9
+
+```{r}
+wolbachia_fig
+```
+
+### Table S.6
+
+```{r, include = FALSE}
+
+   table_out <- wol_out |> 
+     filter(year == 2023) |> 
+     group_by(training_end_date) |> 
+     mutate(difference = median - cases) |> 
+     summarise(total_cases = sum(cases),
+               total_median = sum(median),
+               lower = sum(lower),
+               upper = sum(upper),
+               total_difference = sum(difference), 
+               perc_averted = total_difference/total_median*100) |>
+     mutate(across(where(is.numeric), round, digits = 0)) |> 
+     mutate(predicted_cases = paste0(total_median, " (", lower, " - ", upper, ")")) |> 
+     mutate(cases_averted = total_difference) |> 
+     select(training_end_date, total_cases, predicted_cases, cases_averted, perc_averted) |> 
+     arrange(desc(training_end_date))
+   write.csv(table_out, file = here(output_folder, "table-wolbachia-counterfactual.csv"))   
+
+```
+
+```{r}
+table_out |> 
+  kbl() |> 
+  kable_styling()
+```
+

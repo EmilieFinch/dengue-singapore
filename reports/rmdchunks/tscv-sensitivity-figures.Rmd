@@ -24,7 +24,7 @@ tscv_scores <- score_tscv(tscv_0, df_eval, 0) |>
 ```
 
 ```{r, include = FALSE}
-# Supplementary Figure 3 - dengue forecasts for early warning at 4 and 8 week forecast horizons with no yearly random effect ---------------------------------------
+# Supplementary Figure 5 - dengue forecasts for early warning at 4 and 8 week forecast horizons with no yearly random effect 
 
 pal <- c("Climate and serotype" = "#7570B3", "Climate only" = "#E7298A", "Serotype only" = "#1B9E77", "Seasonal baseline" = "#D95F02")
 
@@ -38,8 +38,8 @@ tscv_preds_sensitivity <- tscv_preds |>
   filter(mod != "Seasonal baseline with year") |>
   ggplot() +
   geom_ribbon(aes(ymin = lower, ymax = upper, x = date, fill = factor(mod), group = factor(mod)), alpha = 0.3) +
-  geom_line(aes(y = median, x = date, col = factor(mod), group = factor(mod)), size = 0.5) +
-  geom_line(aes(y = true_cases, x = date), col = "#000000", size = 0.3) +
+  geom_line(aes(y = median, x = date, col = factor(mod), group = factor(mod)), size = 0.3) +
+  geom_line(aes(y = true_cases, x = date), col = "#000000", size = 0.15) +
   labs(x = NULL, y = NULL) +
   scale_x_date( # fill was #4682B4
     limits = c(as.Date("2008-01-01"), as.Date("2023-03-15")),
@@ -50,28 +50,25 @@ tscv_preds_sensitivity <- tscv_preds |>
   scale_fill_manual(values = pal) +
   coord_cartesian(ylim = c(0, 2250)) +
   facet_grid(mod ~ horizon, switch = "y") +
-  theme_classic() +
-  theme(
-    axis.text.x = element_text(size = 9.5, family = plot_font), axis.text.y = element_text(size = 10, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom", legend.title = element_blank(),
-    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
-    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm"),
-  )
+  theme(legend.title = element_blank(),
+        strip.placement = "outside", strip.text = element_text(size = 6, family = plot_font), 
+        legend.text = element_text(size = 7, family = plot_font), strip.background = element_blank(),
+        legend.margin = margin(t = 0, r = 0, b = 1, l = 0))
 
-ggsave(filename = here(output_folder, "figure-S3.jpeg"), tscv_preds_sensitivity, width = 600, height = 300, units = "mm", bg="white", dpi = 300)
+ggsave(filename = here(output_folder, "figure-S5.jpeg"), tscv_preds_sensitivity, width = 180, height = 120, units = "mm", bg="white", dpi = 300)
+
 
 ```
 
-### Figure S.3
+### Figure S.5
 
-```{r, fig.width = 24, fig.height = 12}
-tscv_preds_horizon_all
+```{r}
+tscv_preds_sensitivity
 ```
 
 ```{r, include = FALSE}
 
 # Figure 6 - Forecast scores over forecast horizons -----------------------------------------------------------------------------------------------
-
 tscv_scores <- tscv_scores |>
   group_by(horizon) |>
   mutate(baseline = crps_natural[mod == "seasonal-baseline"]) |>
@@ -94,14 +91,7 @@ crps_facet <- tscv_scores |>
   scale_color_manual(values = pal) +
   scale_y_continuous(limits = c(100, max(tscv_scores$value[tscv_scores$name == "CRPS"]))) +
   labs(x = "", y = "CRPS", col = NULL) +
-  theme_bw() +
-  guides(color = "none") +
-  theme(
-    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
-    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
-    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
-  )
+  guides(color = "none") 
 
 crpss_facet <- tscv_scores |>
   filter(name == "CRPSS") |>
@@ -111,13 +101,7 @@ crpss_facet <- tscv_scores |>
   scale_y_continuous(limits = c(-15, 15), breaks = seq(-15, 15, by = 5)) +
   scale_color_manual(values = pal) +
   labs(x = "", y = "CRPSS (%)", col = NULL) +
-  guides(color = "none") +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
-    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
-    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm"))
+  guides(color = "none") 
   
 
 bias_facet <- tscv_scores |>
@@ -129,13 +113,8 @@ bias_facet <- tscv_scores |>
   scale_y_continuous(limits = c(-1, 1)) +
   scale_color_manual(values = pal) +
   guides(color = "none") +
-  labs(x = "", y = "Bias", col = NULL) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "none")
+  labs(x = "", y = "Bias", col = NULL) 
   
-
 coverage_facet <- tscv_scores |>
   filter(name == "50%" | name == "95%") |>
   ggplot() +
@@ -146,14 +125,7 @@ coverage_facet <- tscv_scores |>
   scale_color_manual(values = pal) +
   scale_linetype_manual(values = c(1,6)) +
   scale_y_continuous(limits = c(0, 100)) +
-  labs(x = "", y = "Coverage (%)", col = NULL, lty = "Coverage level") +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "bottom" , legend.title = element_text(size = 14, family = plot_font),
-    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
-    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
-  )
+  labs(x = "", y = "Coverage (%)", col = NULL, lty = "Coverage level") 
 
 brier_facet <- tscv_scores |>
   filter(name == "Brier score") |>
@@ -163,14 +135,7 @@ brier_facet <- tscv_scores |>
   scale_color_manual(values = pal) +
   scale_y_continuous(limits = c(0, max(tscv_scores$value[tscv_scores$name == "Brier score"]))) +
   labs(x = "", y = "Brier score", col = NULL) +
-  guides(color = "none") +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
-    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
-    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
-  )
+  guides(color = "none") 
 
 auc_facet <- tscv_scores |>
   filter(name == "AUC (%)") |>
@@ -180,14 +145,7 @@ auc_facet <- tscv_scores |>
   scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 20))) +
   scale_color_manual(values = pal) +
   guides(color = "none") +
-  labs(x = "", y = "AUC (%)", col = NULL) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
-    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
-    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
-  )
+  labs(x = "", y = "AUC (%)", col = NULL) 
 
 hit_facet <- tscv_scores |>
   filter(name == "Hit rate (%)") |>
@@ -197,14 +155,7 @@ hit_facet <- tscv_scores |>
   scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 25))) +
   scale_color_manual(values = pal) +
   guides(color = "none") +
-  labs(x = "Forecast horizon", y = "Hit rate (%)", col = NULL) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
-    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
-    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
-  )
+  labs(x = "Forecast horizon", y = "Hit rate (%)", col = NULL) 
 
 false_alarm_facet <- tscv_scores |>
   filter(name == "False alarm rate (%)") |>
@@ -214,23 +165,16 @@ false_alarm_facet <- tscv_scores |>
   scale_y_continuous(limits = c(0, 100, breaks = seq(0, 100, by = 25))) +
   scale_color_manual(values = pal) +
   guides(color = "none") +
-  labs(x = "Forecast horizon", y = "False alarm rate (%)", col = NULL) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(size = 10, family = plot_font), axis.text.y = element_text(size = 12, family = plot_font), axis.title = element_text(size = 12, family = plot_font),
-    legend.text = element_text(size = 14, family = plot_font), legend.position = "none", legend.title = element_blank(),
-    strip.placement = "outside", strip.text = element_text(size = 14, family = plot_font), strip.background = element_blank(),
-    legend.key.size = unit(1, "cm"), legend.spacing.x = unit(0.5, "cm")
-  )
+  labs(x = "Forecast horizon", y = "False alarm rate (%)", col = NULL) 
 
 score_plot <- ggarrange(coverage_facet, bias_facet, crps_facet, crpss_facet,  brier_facet, auc_facet, hit_facet, false_alarm_facet, nrow = 4, ncol = 2, common.legend = TRUE, legend = "bottom")
-ggsave(filename = here(output_folder, "figure-S4.jpeg"), score_plot, width = 360, height = 360, units = "mm", bg="white", dpi = 300)
+ggsave(filename = here(output_folder, "figure-S6.jpeg"), score_plot, width = 180, height = 180, units = "mm", bg="white", dpi = 300)
 
 ```
 
-### Figure S.4
+### Figure S.6
 
-```{r, fig.height = 15, fig.width = 15}
+```{r}
 score_plot
 ```
 
