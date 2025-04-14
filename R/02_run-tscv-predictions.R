@@ -11,20 +11,23 @@
 #    1. Forecast horizon in weeks: can be 0, 2, 4, 6 or 8
 #    2. Which model formulae to run: can be 'all', 'covariate-only', 'sero_clim_form', 'clim_form', 'sero_form', 'baseline' or 'baseline_year'
 #    3. Whether to estimate yearly RE or not: can be 'estimated' or 'na'
+#    4. Whether to include lagged cases as a predictor in the model: can be 'no' or 'yes'
+
 # Author: Emilie Finch
 # ---------------------------------------------------------------------------------------------------------------------------------------------
 
 source(here("R", "tscv-prediction_fn.R"))
 source(here("R", "utils_fn.R"))
+dir.create(here("output", paste0(Sys.Date())))
 
 # c_args = commandArgs(trailingOnly = TRUE);
-c_args <- list(0, "all", "estimated") # To run all models for forecast horizon of 0 weeks
+c_args <- list(0, "all", "estimated", "no") # To run all models for forecast horizon of 0 weeks without lagged cases as a predictor
 
 # Prepare data ---------------------------------------------------------------------------------------------------------------------------------
 
 if (!exists("df_model")) {
-  source(here("R", "00_read-data.R"))
-  source(here("R", "create-lagged-data.R"))
+  source(here("R", "00_load-data.R"))
+  source(here("R", "create-lagged-data_fn.R"))
   df_model <- lag_data(dengue_singapore)
 }
 
@@ -53,7 +56,12 @@ df_eval <- df_model  |>
     days_no_rain_10_wk_total_2,
     days_no_rain_8_wk_total_4,
     days_no_rain_6_wk_total_6,
-    days_no_rain_4_wk_total_8
+    days_no_rain_4_wk_total_8,
+    lag_cases,
+    lag_cases_2,
+    lag_cases_4,
+    lag_cases_6,
+    lag_cases_8
   ) |>
   # As days without rain is a cumulative variable, scale up the lagged versions to what would be expected over a 12 week period
   mutate(
@@ -94,6 +102,7 @@ df_eval <- df_eval |>
 horizon <- c_args[[1]]
 form_input <- c_args[[2]]
 yearly_re <- c_args[[3]]
+include_lag_cases <- c_args[[4]]
 
 print("Generating time series cross-validated predictions.")
 
@@ -104,6 +113,7 @@ tscv_predictions_weekly(
   horizon = as.numeric(horizon), # One of: 0, 2, 4, 6, 8
   form_input = as.character(form_input), # One of: "all", "covariate-only", "sero_clim_form", "clim_form", "sero_form", "baseline", "baseline-year"
   yearly_re = as.character(yearly_re), # Either: "estimated", "na"
+  include_lag_cases = as.character(include_lag_cases), # Either: "yes", "no"
   filename = "tscv-preds-weekly"
 )
 

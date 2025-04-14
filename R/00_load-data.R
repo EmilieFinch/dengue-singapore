@@ -9,12 +9,15 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
   here, dplyr, janitor, data.table, openxlsx, lubridate, ggplot2, ggpubr, tidyr, nnet, splines, zoo, corrplot,
   INLA, tibble, stringr, showtext, sysfonts, cowplot, scoringutils, purrr, RColorBrewer, pROC, ggpubr, scales,
-  MetBrewer, tidyquant, zoo, hydroGOF, showtext
+  MetBrewer, tidyquant, zoo, hydroGOF, showtext, kableExtra
 )
 
 
 # Load data -------------------------------------------------------------------------------------------------------------
 
-dengue_singapore <- read.csv(here("data", "dengue-cases-climate.csv"))
-dengue_singapore <- dengue_singapore |> 
+dengue_wol <- read.csv(here("data", "dengue-cases-climate_with-2023.csv"), row.names = NULL)
+dengue_wol <- dengue_wol |> 
   mutate(date = as.Date(date, format = "%d/%m/%Y"))
+
+dengue_singapore <- dengue_wol |> 
+  filter(year <= 2022)

@@ -173,7 +173,7 @@ read_results <- function(date = NULL, type = "main-output", horizon = NULL){
     date <- max(dates, na.rm = TRUE)
   } 
   
-  if(type == "tscv-preds" | type == "tscv-preds-sensitivity"){
+  if(type == "tscv-preds-weekly" | type == "tscv-preds-sensitivity" | type == "tscv-preds-with-lag-cases"){
     date_files <- files[dates == date]
     horizons <- sub("^.*(horizon-[0-8]).*$", "\\1", date_files)
     horizons <- as.numeric(sub("^.*([0-9]+).*$", "\\1", horizons))
@@ -215,6 +215,63 @@ score_tscv <- function(tscv_output, data, horizon){
     left_join(tscv_crps |> 
                 filter(scale == "natural") |> 
                 select(mod, bias)) |> 
+    mutate(horizon = horizon)
+  
+  return(score_table)
+}
+
+# Function to get crps by month
+
+get_crps_month <- function(preds, data_input, group) {
+  scores <- data.frame()
+  for (i in 1:length(preds)) {
+    preds_df <- as.data.frame(cbind(preds[[i]]$post.samples, true_value = data_input$cases, month = data_input$month, target_end_date = data_input$date))
+    temp <- preds_df |>
+      mutate(target_end_date = as.Date(target_end_date, origin = "1970-01-01")) |>
+      pivot_longer(-c(true_value, target_end_date, month), names_to = "sample", values_to = "prediction") |>
+      mutate(sample = as.numeric(substring(sample, 2))) |>
+      transform_forecasts(append = TRUE, fun = log_shift, offset = 1) |>
+      filter(!is.na(prediction)) |>
+      score() |>
+      summarise_scores(by = c("scale", group))
+    
+    temp$mod <- preds[[i]]$model
+    
+    scores <- rbind(scores, temp)
+  }
+  return(scores)
+}
+
+# Function to calculate brier score by month
+
+get_brier_month <- function(preds, data_input, group) {
+  scores <- data.frame()
+  for (i in 1:length(preds)) {
+    preds_df <- as.data.frame(cbind(prediction = preds[[i]]$outbreak.probs$prob, true_value = preds[[i]]$outbreak.probs$outbreak, target_end_date = data_input$date, month = data_input$month))
+    temp <- preds_df |>
+      mutate(target_end_date = as.Date(target_end_date, origin = "1970-01-01")) |>
+      filter(!is.na(prediction)) |>
+      score(metrics = "brier_score") |>
+      summarise_scores(by = c("model", group)) |>
+      select(-model)
+    
+    temp$mod <- preds[[i]]$model
+    
+    scores <- rbind(scores, temp)
+  }
+  return(scores)
+}
+
+
+score_tscv_month <- function(tscv_output, data, horizon){
+  
+  tscv_crps <- get_crps_month(tscv_output, data, "month")
+  tscv_brier <- get_brier_month(tscv_output, data, "month")
+  
+  score_table <- tscv_crps |>
+    select(crps, scale, mod, month) |>
+    pivot_wider(names_from = scale, names_prefix = "crps_", values_from = crps) |>
+    left_join(tscv_brier) |> 
     mutate(horizon = horizon)
   
   return(score_table)
