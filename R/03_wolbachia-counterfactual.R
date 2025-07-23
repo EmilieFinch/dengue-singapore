@@ -10,8 +10,7 @@ if (!exists("dengue_wol")) {
 source(here("R", "inla-counterfactual_fn.R"))
 
 # Create output folder
-dir.create(here("output", paste0(Sys.Date())))
-output_folder <- here("output", paste0(Sys.Date()))
+output_folder <- here("output")
 
 # Run counterfactual ----------------------------------------------------------------------------------------------------
 
@@ -29,7 +28,9 @@ df_full <- lag_data(dengue_wol)
 df_wol <- lag_data(dengue_wol) |> 
   filter(year <= 2023) |> 
   mutate(cases = case_when(date > as.Date("2022-06-26") ~ NA_integer_,
-                           T ~ cases)) 
+                           T ~ cases)) |> 
+  mutate(year_index = case_when(year == 2023 ~ NA_integer_,
+                                T ~ year_index))
 
 model_output <- run_scenario(df_wol, sero_climate)
 
@@ -50,7 +51,9 @@ for(end_date in training_end_dates){
   df_wol <- df_full |> 
     filter(year <= 2023) |> 
     mutate(cases = case_when(date > as.Date(end_date) ~ NA_integer_,
-                             T ~ cases))  
+                             T ~ cases)) |> 
+    mutate(year_index = case_when(year > year(end_date) ~ NA_integer_,
+                                  T ~ year_index))
   
   model_output <- run_scenario(df_wol, sero_climate)
   
