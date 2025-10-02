@@ -1,6 +1,6 @@
 # dengue-singapore
 
-This repo contains code and data to support Finch _et al_ "Climate variation and serotype competition drive dengue outbreak dynamics in Singapore"(in press). This study quantifies the role of climate variation and serotype competition in shaping dengue risk in Sinapore using over 20 years of weekly case data, and integrates these findings into an early warning system framework able to predict dengue outbreaks up to 2 months ahead. Model fitting is performed in `INLA`. Climate and dengue case data are available in the `data` folder. Note that data on dengue serotype frequencies shown in Figure 1 are not included in this repo as they are not publicly available.
+This repo contains code and data to support Finch _et al_ "Climate variation and serotype competition drive dengue outbreak dynamics in Singapore". This study quantifies the role of climate variation and serotype competition in shaping dengue risk in Sinapore using over 20 years of weekly case data, and integrates these findings into an early warning system framework able to predict dengue outbreaks up to 2 months ahead. Model fitting is performed in `INLA`. Climate and dengue case data are available in the `data` folder. Note that data on dengue serotype frequencies shown in Figure 1 are not included in this repo as they are not publicly available.
 
 To reproduce the analysis, open the .Rproj file. The following scripts read in the data and run the analysis:
 - [R/00_load-data.R](https://github.com/EmilieFinch/dengue-singapore/blob/main/R/00_load-data.R)
